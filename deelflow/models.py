@@ -1,4 +1,23 @@
 from django.db import models
+# --- AI Performance Metrics Models ---
+class VoiceAICallMetrics(models.Model):
+    total_calls = models.IntegerField(default=0)
+    success_rate = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Voice AI Calls: {self.total_calls} ({self.success_rate}%)"
+
+class VisionAnalysisMetrics(models.Model):
+    total_analyses = models.IntegerField(default=0)
+    accuracy_rate = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Vision Analyses: {self.total_analyses} ({self.accuracy_rate}%)"
+from django.db import models
 import uuid
 
 # 1. Core Business Metrics
@@ -69,6 +88,7 @@ class User(models.Model):
 
     phone = models.CharField(max_length=20, blank=True, null=True)
     role = models.CharField(max_length=50, default="user")
+    #role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     level = models.IntegerField(default=1)
     points = models.IntegerField(default=0)
     is_verified = models.BooleanField(default=False)
@@ -88,3 +108,134 @@ class User(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
+
+class Permission(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    label = models.CharField(max_length=150)
+
+    def __str__(self):
+        return self.label
+
+class Role(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    label = models.CharField(max_length=150)
+    permissions = models.ManyToManyField(Permission, related_name="roles")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.label
+    
+class PropertyAIAnalysis(models.Model):
+    address = models.CharField(max_length=255, unique=True)
+    ai_confidence = models.FloatField()
+    distress_level = models.FloatField()
+    motivation = models.CharField(max_length=255)
+    timeline = models.CharField(max_length=255)
+    roi_percent = models.FloatField()
+    cap_rate = models.FloatField()
+    cash_flow = models.FloatField()
+    market_stability_score = models.FloatField()
+    comparables_confidence = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.address} AI Analysis"
+
+class NLPProcessingMetrics(models.Model):
+    total_processed = models.IntegerField(default=0)
+    accuracy_rate = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"NLP Processed: {self.total_processed} ({self.accuracy_rate}%)"
+
+class BlockchainTxnMetrics(models.Model):
+    total_txns = models.IntegerField(default=0)
+    success_rate = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Blockchain Txns: {self.total_txns} ({self.success_rate}%)"
+    
+class Campaign(models.Model):
+    STATUS_CHOICES = [
+        ("active", "Active"),
+        ("paused", "Paused"),
+        ("completed", "Completed"),
+    ]
+
+    name = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Lead(models.Model):
+    STATUS_CHOICES = [
+        ("new", "New"),
+        ("qualified", "Qualified"),
+        ("converted", "Converted"),
+    ]
+
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="leads")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
+    responded = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Lead {self.id} - {self.status}"
+
+
+class Channel(models.Model):
+    CHANNEL_CHOICES = [
+        ("email", "Email"),
+        ("sms", "SMS"),
+        ("voice", "Voice"),
+        ("whatsapp", "WhatsApp"),
+    ]
+
+    name = models.CharField(max_length=50, choices=CHANNEL_CHOICES, unique=True)
+    active = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+    
+
+class CampaignPropertyStats(models.Model):
+    total_properties = models.IntegerField()
+    distressed_properties = models.IntegerField()
+    competition_level = models.CharField(max_length=50)  # e.g., Low, Medium, High
+    avg_roi = models.DecimalField(max_digits=6, decimal_places=2)  # percentage
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Properties: {self.total_properties}, ROI: {self.avg_roi}%"
+    
+
+class CampaignPerformance(models.Model):
+    campaign_type = models.CharField(max_length=100)  # e.g., Heat Mapping, Social Media
+    roi_percentage = models.DecimalField(max_digits=6, decimal_places=2)  # percentage
+    date_range = models.CharField(max_length=100, default="Last 30 days")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.campaign_type}: {self.roi_percentage}%"
+
+
+class ChannelResponseRate(models.Model):
+    channel_name = models.CharField(max_length=100)  # e.g., Voice Calls, SMS, Email, WhatsApp
+    response_rate = models.DecimalField(max_digits=6, decimal_places=2)  # percentage
+    date_range = models.CharField(max_length=100, default="Last 30 days")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.channel_name}: {self.response_rate}%"
