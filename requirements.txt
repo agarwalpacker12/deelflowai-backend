@@ -13,4 +13,4 @@ typing-extensions==4.13.2
 tzdata==2025.2
 urllib3==2.2.3
 twilio==8.7.0
-
+rest_framework_simplejwt==5.3.1
