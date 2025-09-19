@@ -51,6 +51,12 @@ deelflowAI/
 3. **Run the development server:**
     ```sh
     python manage.py runserver
+
+    ```
+4. **Run AI Script on development server:**
+    ```sh
+    py manage.py run_ai_agent
+
     ```
 
 ## API Endpoints
