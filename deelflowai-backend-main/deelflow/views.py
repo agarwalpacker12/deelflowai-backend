@@ -155,6 +155,7 @@ import re
 import requests
 import time
 from typing import IO
+from django.db.models import Q
 from django.http import response
 from django.views.decorators.csrf import ensure_csrf_cookie
 import os
@@ -798,14 +799,17 @@ def update_role_permissions(request):
         )
         
 
-# API view to create a new role
-@api_view(['POST'])
-#@permission_classes([IsAuthenticated])
+@api_view(["POST"])
 def create_role(request):
     """
     Create Role API
     POST /api/roles/create
-    Payload: { "name": "manager", "label": "Manager", "permissions": ["perm1", "perm2"] }
+    Payload: 
+    {
+        "name": "manager", 
+        "label": "Manager", 
+        "permissions": ["manage_roles", "manage_campaign"]
+    }
     """
     try:
         name = request.data.get("name")
@@ -831,9 +835,15 @@ def create_role(request):
 
         with transaction.atomic():
             role = Role.objects.create(name=name, label=label)
+
+            # Handle permissions (case-insensitive matching)
             if permissions and isinstance(permissions, list):
-                perms = Permission.objects.filter(name__in=permissions)
+                query = Q()
+                for perm_name in permissions:
+                    query |= Q(name__iexact=perm_name)
+                perms = Permission.objects.filter(query)
                 role.permissions.set(perms)
+
             role.save()
 
         permissions_data = [
