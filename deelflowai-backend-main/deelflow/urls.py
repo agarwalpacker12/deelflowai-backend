@@ -69,4 +69,5 @@ urlpatterns = [
     path('get_role_by_id/', views.get_role_by_id, name='get_role_by_id'),
     path('edit_role/', views.edit_role, name='edit_role'),
     path('get_all_users/', views.get_all_users, name='get_all_users'),
+    path('create_campaign/', views.create_campaign, name='create_campaign'),
 ]

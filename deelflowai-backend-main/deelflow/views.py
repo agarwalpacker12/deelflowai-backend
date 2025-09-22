@@ -1381,7 +1381,7 @@ def recent_market_alerts(request):
         "alerts": alerts
     })
     
-
+    
 @api_view(['POST'])
 def get_role_by_id(request):
     role_id = request.data.get('role_id')
@@ -1507,4 +1507,93 @@ def edit_role(request):
         return Response(
             {"status": "error", "message": f"Failed to edit role: {str(e)}"},
             status=500
+        )
+        
+
+@api_view(["POST"])
+def create_campaign(request):
+    try:
+        data = request.data
+
+        # Required fields
+        required_fields = ["name", "campaign_type", "channel", "budget", "scheduled_at"]
+        missing_fields = [f for f in required_fields if f not in data]
+
+        if missing_fields:
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Validation failed for creating campaign",
+                    "error_code": "VALIDATION_ERROR",
+                    "errors": [f"{f} field is required." for f in missing_fields],
+                },
+                status=400,
+            )
+
+        campaign = Campaign.objects.create(
+            name=data["name"],
+            campaign_type=data["campaign_type"],
+            channel=data["channel"],
+            budget=data.get("budget"),
+            scheduled_at=data.get("scheduled_at"),
+
+            # Geographic Scope
+            geographic_scope_type=data.get("geographic_scope_type"),
+            geographic_scope_values=data.get("geographic_scope_values", []),
+
+            # Target Criteria
+            location=data.get("location"),
+            property_type=data.get("property_type"),
+            minimum_equity=data.get("minimum_equity"),
+
+            # Property Criteria
+            min_price=data.get("min_price"),
+            max_price=data.get("max_price"),
+
+            # Distress Indicators
+            distress_indicators=data.get("distress_indicators", []),
+
+            # Email Content
+            subject_line=data.get("subject_line"),
+            email_content=data.get("email_content"),
+
+            # AI Features
+            use_ai_personalization=data.get("use_ai_personalization", False),
+
+            status=data.get("status", "active"),
+        )
+
+        return Response(
+            {
+                "status": "success",
+                "message": "Campaign created successfully",
+                "data": {
+                    "id": campaign.id,
+                    "name": campaign.name,
+                    "campaign_type": campaign.campaign_type,
+                    "channel": campaign.channel,
+                    "budget": float(campaign.budget) if campaign.budget else None,
+                    "scheduled_at": str(campaign.scheduled_at) if campaign.scheduled_at else None,
+                    "geographic_scope_type": campaign.geographic_scope_type,
+                    "geographic_scope_values": campaign.geographic_scope_values,
+                    "location": campaign.location,
+                    "property_type": campaign.property_type,
+                    "minimum_equity": float(campaign.minimum_equity) if campaign.minimum_equity else None,
+                    "min_price": float(campaign.min_price) if campaign.min_price else None,
+                    "max_price": float(campaign.max_price) if campaign.max_price else None,
+                    "distress_indicators": campaign.distress_indicators,
+                    "subject_line": campaign.subject_line,
+                    "email_content": campaign.email_content,
+                    "use_ai_personalization": campaign.use_ai_personalization,
+                    "status": campaign.status,
+                    "created_at": localtime(campaign.created_at).isoformat(),
+                },
+            },
+            status=201,
+        )
+
+    except Exception as e:
+        return Response(
+            {"status": "error", "message": f"Failed to create campaign: {str(e)}"},
+            status=500,
         )
