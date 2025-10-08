@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: deelflowai
+      POSTGRES_USER: deelflowai_user
+      POSTGRES_PASSWORD: deelflowai_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U deelflowai_user -d deelflowai"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for Celery
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # FastAPI Application
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://deelflowai_user:deelflowai_password@postgres:5432/deelflowai
+      - DJANGO_DATABASE_URL=postgresql://deelflowai_user:deelflowai_password@postgres:5432/deelflowai
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-secret-key-here
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Worker
+  celery:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://deelflowai_user:deelflowai_password@postgres:5432/deelflowai
+      - DJANGO_DATABASE_URL=postgresql://deelflowai_user:deelflowai_password@postgres:5432/deelflowai
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-secret-key-here
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A app.tasks worker --loglevel=info
+
+  # Celery Beat (Scheduler)
+  celery-beat:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://deelflowai_user:deelflowai_password@postgres:5432/deelflowai
+      - DJANGO_DATABASE_URL=postgresql://deelflowai_user:deelflowai_password@postgres:5432/deelflowai
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-secret-key-here
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A app.tasks beat --loglevel=info
+
+volumes:
+  postgres_data:
