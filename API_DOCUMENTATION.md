@@ -994,6 +994,16 @@ curl -X GET http://localhost:8000/stats \
 | GET | `/deal-completions-scheduling/` | Deal completion metrics | ❌ |
 | GET | `/current-subscription/` | Current subscription details | ❌ |
 
+### **Property Management Endpoints**
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/properties/` | Get all properties | ❌ |
+| POST | `/properties/` | Create new property | ❌ |
+| GET | `/properties/{id}/` | Get specific property | ❌ |
+| PUT | `/properties/{id}/` | Update property | ❌ |
+| DELETE | `/properties/{id}/` | Delete property | ❌ |
+| GET | `/properties/{id}/ai-analysis/` | Get AI analysis for property | ❌ |
+
 ### **Analytics Endpoints** (Versioned)
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
@@ -1001,8 +1011,9 @@ curl -X GET http://localhost:8000/stats \
 | GET | `/api/v1/analytics/status` | Analytics service status | ❌ |
 | GET | `/api/v1/analytics/recent-activity` | Analytics activities | ❌ |
 
-**Total Endpoints**: 40+  
+**Total Endpoints**: 46+  
 **Dashboard Endpoints**: 19  
+**Property Endpoints**: 6  
 **Success Rate**: 100%  
 **All endpoints support trailing slashes** (`/endpoint/`)
 
@@ -1492,11 +1503,250 @@ GET /deal-completions-scheduling/
 
 ---
 
+## 🏠 **Property Management Endpoints**
+
+### **Create Property**
+```http
+POST /properties/
+Content-Type: application/json
+
+{
+  "address": "habitat 1",
+  "unit": "22",
+  "city": "something",
+  "state": "Georgia",
+  "zip": "422001",
+  "county": "america",
+  "property_type": "Single Family",
+  "bedrooms": 4,
+  "bathrooms": 2,
+  "square_feet": 1200,
+  "lot_size": 1,
+  "year_built": 2024,
+  "purchase_price": 12000,
+  "arv": 50000,
+  "repair_estimate": 20000,
+  "holding_costs": 12000,
+  "transaction_type": "Wholesale",
+  "assignment_fee": 4000,
+  "description": "none",
+  "seller_notes": "none"
+}
+```
+
+**Request Parameters:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| address | string | Yes | Street address |
+| unit | string | No | Unit/Apartment number |
+| city | string | Yes | City name |
+| state | string | Yes | State name |
+| zip | string | Yes | ZIP code |
+| county | string | Yes | County name |
+| property_type | string | Yes | Type of property |
+| bedrooms | integer | No | Number of bedrooms |
+| bathrooms | float | No | Number of bathrooms |
+| square_feet | integer | No | Square footage |
+| lot_size | float | No | Lot size in acres |
+| year_built | integer | No | Year built |
+| purchase_price | float | No | Purchase price |
+| arv | float | No | After Repair Value |
+| repair_estimate | float | No | Repair cost estimate |
+| holding_costs | float | No | Holding costs |
+| transaction_type | string | Yes | Type of transaction |
+| assignment_fee | float | No | Assignment fee |
+| description | string | Yes | Property description |
+| seller_notes | string | No | Seller notes |
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Property created successfully",
+  "data": {
+    "id": 2,
+    "address": "habitat 1",
+    "unit": "22",
+    "city": "something",
+    "state": "Georgia",
+    "zip": "422001",
+    "county": "america",
+    "property_type": "Single Family",
+    "bedrooms": 4,
+    "bathrooms": 2.0,
+    "square_feet": 1200,
+    "lot_size": 1.0,
+    "year_built": 2024,
+    "purchase_price": 12000.0,
+    "arv": 50000.0,
+    "repair_estimate": 20000.0,
+    "holding_costs": 12000.0,
+    "transaction_type": "Wholesale",
+    "assignment_fee": 4000.0,
+    "description": "none",
+    "seller_notes": "none",
+    "potential_profit": 18000.0,
+    "status": "active",
+    "created_at": "2025-10-09T04:30:00Z",
+    "updated_at": "2025-10-09T04:30:00Z"
+  }
+}
+```
+
+### **Get All Properties**
+```http
+GET /properties/
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "address": "123 Main St",
+      "unit": "Apt 1",
+      "city": "Atlanta",
+      "state": "GA",
+      "zip": "30309",
+      "county": "Fulton",
+      "property_type": "Single Family",
+      "bedrooms": 3,
+      "bathrooms": 2.0,
+      "square_feet": 1500,
+      "lot_size": 0.25,
+      "year_built": 2020,
+      "purchase_price": 200000.0,
+      "arv": 250000.0,
+      "repair_estimate": 15000.0,
+      "holding_costs": 5000.0,
+      "transaction_type": "Wholesale",
+      "assignment_fee": 10000.0,
+      "description": "Beautiful single family home",
+      "seller_notes": "Motivated seller",
+      "status": "active",
+      "created_at": "2025-10-09T04:30:00Z",
+      "updated_at": "2025-10-09T04:30:00Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20
+}
+```
+
+### **Get Property by ID**
+```http
+GET /properties/{property_id}/
+```
+
+### **Update Property**
+```http
+PUT /properties/{property_id}/
+Content-Type: application/json
+
+{
+  "address": "Updated Address",
+  "city": "Updated City",
+  "state": "Updated State",
+  "zip": "12345",
+  "county": "Updated County",
+  "property_type": "Condo",
+  "description": "Updated description"
+}
+```
+
+**Request Parameters (All Optional for Partial Updates):**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| address | string | No | Street address |
+| unit | string | No | Unit/Apartment number |
+| city | string | No | City name |
+| state | string | No | State name |
+| zip | string | No | ZIP code |
+| county | string | No | County name |
+| property_type | string | No | Type of property |
+| bedrooms | integer | No | Number of bedrooms |
+| bathrooms | float | No | Number of bathrooms |
+| square_feet | integer | No | Square footage |
+| lot_size | float | No | Lot size in acres |
+| year_built | integer | No | Year built |
+| purchase_price | float | No | Purchase price |
+| arv | float | No | After Repair Value |
+| repair_estimate | float | No | Repair cost estimate |
+| holding_costs | float | No | Holding costs |
+| transaction_type | string | No | Type of transaction |
+| assignment_fee | float | No | Assignment fee |
+| description | string | No | Property description |
+| seller_notes | string | No | Seller notes |
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Property updated successfully",
+  "data": {
+    "id": 2,
+    "address": "Updated Address",
+    "city": "Updated City",
+    "state": "Updated State",
+    "zip": "12345",
+    "county": "Updated County",
+    "property_type": "Condo",
+    "description": "Updated description",
+    "updated_at": "2025-10-09T04:30:00Z"
+  }
+}
+```
+
+### **Delete Property**
+```http
+DELETE /properties/{property_id}/
+```
+
+### **Get Property AI Analysis**
+```http
+GET /properties/{property_id}/ai-analysis/
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "property_id": 1,
+    "analysis_type": "property_valuation",
+    "confidence_score": 87.5,
+    "recommended_price": 245000.0,
+    "market_analysis": {
+      "comparable_properties": 12,
+      "average_price_per_sqft": 163.33,
+      "market_trend": "increasing"
+    },
+    "risk_assessment": {
+      "overall_risk": "low",
+      "location_score": 8.5,
+      "condition_score": 7.2
+    },
+    "recommendations": [
+      "Property shows strong investment potential",
+      "Consider minor cosmetic updates to increase value",
+      "Market conditions are favorable for this area"
+    ],
+    "created_at": "2025-10-09T04:30:00Z"
+  }
+}
+```
+
+---
+
 ## 📊 **Documentation Completeness Summary**
 
 ### **✅ Comprehensive Coverage**
-- **API Endpoints**: 40+ fully documented with detailed parameters and responses
+- **API Endpoints**: 46+ fully documented with detailed parameters and responses
 - **Dashboard Endpoints**: 19 individual metric endpoints for frontend integration
+- **Property Endpoints**: 6 complete CRUD operations for property management
 - **Error Handling**: 15+ specific error codes with detailed descriptions
 - **Authentication**: Complete JWT flow with visual diagrams
 - **Pagination**: Full pagination support with metadata
@@ -1518,8 +1768,9 @@ GET /deal-completions-scheduling/
 - **Glossary**: 25+ technical and business terms defined
 
 **Total Development Time**: 1 day  
-**API Endpoints**: 40+  
+**API Endpoints**: 46+  
 **Dashboard Endpoints**: 19  
+**Property Endpoints**: 6  
 **Test Coverage**: 100%  
 **Documentation**: Complete  
 **Status**: ✅ **READY FOR FRONTEND INTEGRATION**

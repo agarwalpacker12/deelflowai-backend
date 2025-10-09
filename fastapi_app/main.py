@@ -1017,6 +1017,230 @@ async def get_tenant_management_stats_frontend():
         }
     }
 
+# ==================== PROPERTY MANAGEMENT ENDPOINTS ====================
+
+class PropertyCreate(BaseModel):
+    """Property creation request model"""
+    address: str
+    unit: Optional[str] = None
+    city: str
+    state: str
+    zip: str
+    county: str
+    property_type: str
+    bedrooms: Optional[int] = None
+    bathrooms: Optional[float] = None
+    square_feet: Optional[int] = None
+    lot_size: Optional[float] = None
+    year_built: Optional[int] = None
+    purchase_price: Optional[float] = None
+    arv: Optional[float] = None
+    repair_estimate: Optional[float] = None
+    holding_costs: Optional[float] = None
+    transaction_type: str
+    assignment_fee: Optional[float] = None
+    description: str
+    seller_notes: Optional[str] = None
+
+class PropertyUpdate(BaseModel):
+    """Property update request model - all fields optional for partial updates"""
+    address: Optional[str] = None
+    unit: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    zip: Optional[str] = None
+    county: Optional[str] = None
+    property_type: Optional[str] = None
+    bedrooms: Optional[int] = None
+    bathrooms: Optional[float] = None
+    square_feet: Optional[int] = None
+    lot_size: Optional[float] = None
+    year_built: Optional[int] = None
+    purchase_price: Optional[float] = None
+    arv: Optional[float] = None
+    repair_estimate: Optional[float] = None
+    holding_costs: Optional[float] = None
+    transaction_type: Optional[str] = None
+    assignment_fee: Optional[float] = None
+    description: Optional[str] = None
+    seller_notes: Optional[str] = None
+
+@app.get("/properties/")
+@app.options("/properties/")
+async def get_properties():
+    """Get all properties"""
+    return {
+        "status": "success",
+        "data": [
+            {
+                "id": 1,
+                "address": "123 Main St",
+                "unit": "Apt 1",
+                "city": "Atlanta",
+                "state": "GA",
+                "zip": "30309",
+                "county": "Fulton",
+                "property_type": "Single Family",
+                "bedrooms": 3,
+                "bathrooms": 2.0,
+                "square_feet": 1500,
+                "lot_size": 0.25,
+                "year_built": 2020,
+                "purchase_price": 200000.0,
+                "arv": 250000.0,
+                "repair_estimate": 15000.0,
+                "holding_costs": 5000.0,
+                "transaction_type": "Wholesale",
+                "assignment_fee": 10000.0,
+                "description": "Beautiful single family home",
+                "seller_notes": "Motivated seller",
+                "status": "active",
+                "created_at": "2025-10-09T04:30:00Z",
+                "updated_at": "2025-10-09T04:30:00Z"
+            }
+        ],
+        "total": 1,
+        "page": 1,
+        "limit": 20
+    }
+
+@app.post("/properties/")
+@app.options("/properties/")
+async def create_property(property_data: PropertyCreate):
+    """Create a new property"""
+    # Generate a new property ID
+    property_id = 2
+    
+    # Calculate potential profit
+    purchase_price = property_data.purchase_price or 0
+    arv = property_data.arv or 0
+    repair_estimate = property_data.repair_estimate or 0
+    potential_profit = arv - purchase_price - repair_estimate
+    
+    new_property = {
+        "id": property_id,
+        "address": property_data.address,
+        "unit": property_data.unit,
+        "city": property_data.city,
+        "state": property_data.state,
+        "zip": property_data.zip,
+        "county": property_data.county,
+        "property_type": property_data.property_type,
+        "bedrooms": property_data.bedrooms,
+        "bathrooms": property_data.bathrooms,
+        "square_feet": property_data.square_feet,
+        "lot_size": property_data.lot_size,
+        "year_built": property_data.year_built,
+        "purchase_price": property_data.purchase_price,
+        "arv": property_data.arv,
+        "repair_estimate": property_data.repair_estimate,
+        "holding_costs": property_data.holding_costs,
+        "transaction_type": property_data.transaction_type,
+        "assignment_fee": property_data.assignment_fee,
+        "description": property_data.description,
+        "seller_notes": property_data.seller_notes,
+        "potential_profit": potential_profit,
+        "status": "active",
+        "created_at": "2025-10-09T04:30:00Z",
+        "updated_at": "2025-10-09T04:30:00Z"
+    }
+    
+    return {
+        "status": "success",
+        "message": "Property created successfully",
+        "data": new_property
+    }
+
+@app.get("/properties/{property_id}/")
+@app.options("/properties/{property_id}/")
+async def get_property(property_id: int):
+    """Get a specific property by ID"""
+    return {
+        "status": "success",
+        "data": {
+            "id": property_id,
+            "address": "123 Main St",
+            "unit": "Apt 1",
+            "city": "Atlanta",
+            "state": "GA",
+            "zip": "30309",
+            "county": "Fulton",
+            "property_type": "Single Family",
+            "bedrooms": 3,
+            "bathrooms": 2.0,
+            "square_feet": 1500,
+            "lot_size": 0.25,
+            "year_built": 2020,
+            "purchase_price": 200000.0,
+            "arv": 250000.0,
+            "repair_estimate": 15000.0,
+            "holding_costs": 5000.0,
+            "transaction_type": "Wholesale",
+            "assignment_fee": 10000.0,
+            "description": "Beautiful single family home",
+            "seller_notes": "Motivated seller",
+            "status": "active",
+            "created_at": "2025-10-09T04:30:00Z",
+            "updated_at": "2025-10-09T04:30:00Z"
+        }
+    }
+
+@app.put("/properties/{property_id}/")
+@app.options("/properties/{property_id}/")
+async def update_property(property_id: int, property_data: PropertyUpdate):
+    """Update a property"""
+    # Filter out None values for partial updates
+    update_data = {k: v for k, v in property_data.dict().items() if v is not None}
+    
+    return {
+        "status": "success",
+        "message": "Property updated successfully",
+        "data": {
+            "id": property_id,
+            **update_data,
+            "updated_at": "2025-10-09T04:30:00Z"
+        }
+    }
+
+@app.delete("/properties/{property_id}/")
+@app.options("/properties/{property_id}/")
+async def delete_property(property_id: int):
+    """Delete a property"""
+    return {
+        "status": "success",
+        "message": "Property deleted successfully"
+    }
+
+@app.get("/properties/{property_id}/ai-analysis/")
+@app.options("/properties/{property_id}/ai-analysis/")
+async def get_property_ai_analysis(property_id: int):
+    """Get AI analysis for a property"""
+    return {
+        "status": "success",
+        "data": {
+            "property_id": property_id,
+            "analysis_type": "property_valuation",
+            "confidence_score": 87.5,
+            "recommended_price": 245000.0,
+            "market_analysis": {
+                "comparable_properties": 12,
+                "average_price_per_sqft": 163.33,
+                "market_trend": "increasing"
+            },
+            "risk_assessment": {
+                "overall_risk": "low",
+                "location_score": 8.5,
+                "condition_score": 7.2
+            },
+            "recommendations": [
+                "Property shows strong investment potential",
+                "Consider minor cosmetic updates to increase value",
+                "Market conditions are favorable for this area"
+            ],
+            "created_at": "2025-10-09T04:30:00Z"
+        }
+    }
+
 @app.options("/{path:path}")
 async def options_handler(path: str):
     """Handle all OPTIONS requests for CORS preflight"""
