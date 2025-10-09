@@ -333,20 +333,33 @@ async def recent_activity_trailing():
 @app.options("/api/auth/login")
 async def login():
     """User login endpoint"""
+    from app.core.security import create_access_token, create_refresh_token
+    import uuid
+    import time
+    
+    # Generate dynamic tokens
+    user_id = 1
+    user_email = "admin@deelflowai.com"
+    
+    # Create JWT tokens
+    access_token = create_access_token(data={"sub": user_email, "user_id": user_id})
+    refresh_token = create_refresh_token(data={"sub": user_email, "user_id": user_id})
+    
     return {
         "status": "success",
         "message": "Login successful",
         "data": {
             "user": {
-                "id": 1,
-                "email": "admin@deelflowai.com",
+                "id": user_id,
+                "email": user_email,
                 "name": "Admin User",
                 "role": "admin"
             },
             "tokens": {
-                "access_token": "mock_access_token_12345",
-                "refresh_token": "mock_refresh_token_67890",
-                "expires_in": 3600
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "expires_in": 3600,
+                "token_type": "bearer"
             }
         }
     }
@@ -356,20 +369,33 @@ async def login():
 @app.options("/api/auth/register")
 async def register():
     """User registration endpoint"""
+    from app.core.security import create_access_token, create_refresh_token
+    import uuid
+    import time
+    
+    # Generate dynamic tokens for new user
+    user_id = 2
+    user_email = "newuser@deelflowai.com"
+    
+    # Create JWT tokens
+    access_token = create_access_token(data={"sub": user_email, "user_id": user_id})
+    refresh_token = create_refresh_token(data={"sub": user_email, "user_id": user_id})
+    
     return {
         "status": "success",
         "message": "Registration successful",
         "data": {
             "user": {
-                "id": 2,
-                "email": "newuser@deelflowai.com",
+                "id": user_id,
+                "email": user_email,
                 "name": "New User",
                 "role": "user"
             },
             "tokens": {
-                "access_token": "mock_access_token_54321",
-                "refresh_token": "mock_refresh_token_09876",
-                "expires_in": 3600
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "expires_in": 3600,
+                "token_type": "bearer"
             }
         }
     }
@@ -386,20 +412,33 @@ async def logout():
 
 @app.get("/api/auth/me")
 @app.options("/api/auth/me")
-async def get_current_user():
+async def get_current_user(authorization: str = None):
     """Get current user info"""
-    return {
-        "status": "success",
-        "data": {
-            "user": {
-                "id": 1,
-                "email": "admin@deelflowai.com",
-                "name": "Admin User",
-                "role": "admin",
-                "permissions": ["read", "write", "admin"]
+    from app.core.security import get_current_user as get_user_from_token
+    from fastapi import Header, HTTPException
+    
+    try:
+        # Extract token from Authorization header
+        if authorization and authorization.startswith("Bearer "):
+            token = authorization.split(" ")[1]
+            # For now, return mock user data (in production, validate the token)
+            return {
+                "status": "success",
+                "data": {
+                    "user": {
+                        "id": 1,
+                        "email": "admin@deelflowai.com",
+                        "name": "Admin User",
+                        "role": "admin",
+                        "permissions": ["read", "write", "admin"]
+                    }
+                }
             }
-        }
-    }
+        else:
+            # No token provided, return error
+            raise HTTPException(status_code=401, detail="Authorization token required")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 @app.options("/{path:path}")
 async def options_handler(path: str):
