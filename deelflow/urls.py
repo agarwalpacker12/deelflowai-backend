@@ -34,8 +34,14 @@ urlpatterns = [
     path('api/monthly-profit/', views.get_monthly_profit, name='monthly-profit'),
 
     path('api/voice-calls-count/', views.get_voice_calls_count, name='voice-calls-count'),
+    path('api/voice-ai-calls-count/', views.get_voice_ai_call_metrics, name='voice-ai-calls-count'),
 
     path('api/compliance-status/', views.get_compliance_status, name='compliance-status'),
+    
+    # Additional missing endpoints
+    path('stats/', views.get_stats, name='stats'),
+    path('opportunity-cost-analysis/', views.get_opportunity_cost_analysis, name='opportunity-cost-analysis'),
+    path('status/', views.get_status, name='status'),
 
     path('api/audit-trail-data/', views.get_audit_trail_data, name='audit-trail-data'),
 
