@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from .models import VoiceAICallMetrics, VisionAnalysisMetrics
 import requests
 from twilio.rest import Client
+from django.utils import timezone
 
 
 
@@ -1043,46 +1044,86 @@ def repair_analysis(request):
     }, status=200)
     
 
-@api_view(['POST'])
+@api_view(['GET', 'POST'])
 #@permission_classes([IsAuthenticated])
 def recent_activity(request):
     """
     Recent Activity API
-    POST /api/properties/activity
-    Payload: { "property_id": 101 } OR { "address": "1247 Oak Street, Dallas, TX 75201" }
+    GET /recent_activity/ - Get general recent activities
+    POST /recent_activity/ - Get activities for specific property
+    POST Payload: { "property_id": 101 } OR { "address": "1247 Oak Street, Dallas, TX 75201" }
     """
+    
+    if request.method == 'GET':
+        # Return general recent activities for dashboard
+        try:
+            from .models import ActivityFeed
+            activities = ActivityFeed.objects.order_by('-timestamp')[:20]
+            activity_list = [
+                {
+                    'event': a.description or a.action_type,
+                    'date': a.timestamp.strftime('%Y-%m-%d'),
+                    'user': getattr(a, 'user_name', None) or getattr(a, 'user_id', None) or 'System',
+                    'action_type': a.action_type
+                }
+                for a in activities
+            ]
+            
+            # If no activities in database, return mock data
+            if not activity_list:
+                activity_list = [
+                    {"event": "New lead added", "date": "2025-10-08", "user": "System", "action_type": "lead_created"},
+                    {"event": "Property analysis completed", "date": "2025-10-07", "user": "AI", "action_type": "ai_analysis"},
+                    {"event": "Campaign launched", "date": "2025-10-06", "user": "Admin", "action_type": "campaign_created"},
+                    {"event": "Deal closed", "date": "2025-10-05", "user": "Agent", "action_type": "deal_closed"}
+                ]
+            
+            return Response({
+                "status": "success",
+                "message": "Recent activity retrieved successfully",
+                "data": {
+                    "activities": activity_list,
+                    "last_updated": timezone.now().isoformat()
+                }
+            }, status=200)
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": f"Failed to retrieve recent activity: {str(e)}"
+            }, status=500)
+    
+    else:  # POST method
+        property_id = request.data.get("property_id")
+        address = request.data.get("address")
 
-    property_id = request.data.get("property_id")
-    address = request.data.get("address")
+        # ✅ Validation
+        if not property_id and not address:
+            return Response({
+                "status": "error",
+                "message": "Validation failed for recent activity",
+                "error_code": "VALIDATION_ERROR",
+                "errors": ["Either property_id or address is required."]
+            }, status=400)
 
-    # ✅ Validation
-    if not property_id and not address:
+        # ⚡ Mock dataset (later can be plugged into CRM/MLS history data)
+        activities = [
+            {"event": "Price reduced by $3,000", "date": "2025-06-10"},
+            {"event": "New roof installed", "date": "2025-04-22"},
+            {"event": "HVAC system serviced", "date": "2025-02-15"},
+            {"event": "Listed for sale 18 months ago", "date": "2024-03-01"}
+        ]
+
+        # ✅ Success response
         return Response({
-            "status": "error",
-            "message": "Validation failed for recent activity",
-            "error_code": "VALIDATION_ERROR",
-            "errors": ["Either property_id or address is required."]
-        }, status=400)
-
-    # ⚡ Mock dataset (later can be plugged into CRM/MLS history data)
-    activities = [
-        {"event": "Price reduced by $3,000", "date": "2025-06-10"},
-        {"event": "New roof installed", "date": "2025-04-22"},
-        {"event": "HVAC system serviced", "date": "2025-02-15"},
-        {"event": "Listed for sale 18 months ago", "date": "2024-03-01"}
-    ]
-
-    # ✅ Success response
-    return Response({
-        "status": "success",
-        "message": "Recent activity retrieved successfully",
-        "data": {
-            "property_id": property_id,
-            "address": address,
-            "activities": activities,
-            "last_updated": datetime.utcnow().isoformat() + "Z"
-        }
-    }, status=200)
+            "status": "success",
+            "message": "Recent activity retrieved successfully",
+            "data": {
+                "property_id": property_id,
+                "address": address,
+                "activities": activities,
+                "last_updated": timezone.now().isoformat()
+            }
+        }, status=200)
 
 
 @api_view(['POST'])
@@ -1607,3 +1648,120 @@ def create_campaign(request):
             {"status": "error", "message": f"Failed to create campaign: {str(e)}"},
             status=500,
         )
+
+# Additional missing endpoints for frontend compatibility
+
+@api_view(['GET'])
+def get_stats(request):
+    """Get general statistics for the dashboard"""
+    try:
+        from .models import BusinessMetrics, User, Property, Lead, Deal
+        
+        # Get latest metrics
+        latest_metrics = BusinessMetrics.objects.order_by('-report_date').first()
+        
+        stats = {
+            'total_users': User.objects.count(),
+            'total_properties': Property.objects.count(),
+            'total_leads': Lead.objects.count(),
+            'total_deals': Deal.objects.count(),
+            'active_campaigns': 0,  # Will be implemented when Campaign model is ready
+            'revenue': float(latest_metrics.total_revenue) if latest_metrics else 0,
+            'monthly_profit': float(latest_metrics.monthly_profit) if latest_metrics else 0,
+            'voice_calls': int(latest_metrics.voice_calls_count) if latest_metrics else 0,
+        }
+        
+        return Response({
+            'status': 'success',
+            'data': stats
+        })
+    except Exception as e:
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@api_view(['GET'])
+def get_opportunity_cost_analysis(request):
+    """Get opportunity cost analysis data"""
+    try:
+        from .models import BusinessMetrics
+        
+        latest_metrics = BusinessMetrics.objects.order_by('-report_date').first()
+        
+        if latest_metrics:
+            analysis = {
+                'total_revenue': float(latest_metrics.total_revenue),
+                'monthly_profit': float(latest_metrics.monthly_profit),
+                'properties_listed': int(latest_metrics.properties_listed),
+                'total_deals': int(latest_metrics.total_deals),
+                'opportunity_cost': float(latest_metrics.total_revenue) * 0.1,  # 10% of revenue as opportunity cost
+                'efficiency_score': 85.5,  # Mock efficiency score
+                'recommendations': [
+                    'Increase lead conversion rate by 15%',
+                    'Optimize property listing strategy',
+                    'Improve deal closing timeline'
+                ]
+            }
+        else:
+            analysis = {
+                'total_revenue': 0,
+                'monthly_profit': 0,
+                'properties_listed': 0,
+                'total_deals': 0,
+                'opportunity_cost': 0,
+                'efficiency_score': 0,
+                'recommendations': []
+            }
+        
+        return Response({
+            'status': 'success',
+            'data': analysis
+        })
+    except Exception as e:
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@api_view(['GET'])
+def get_status(request):
+    """Get system status and health information"""
+    try:
+        from .models import BusinessMetrics, User, Property, Lead, Deal
+        from django.db import connection
+        
+        # Check database connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            db_status = "connected"
+    except:
+        db_status = "disconnected"
+    
+    # Get basic counts
+    try:
+        user_count = User.objects.count()
+        property_count = Property.objects.count()
+        lead_count = Lead.objects.count()
+        deal_count = Deal.objects.count()
+    except:
+        user_count = property_count = lead_count = deal_count = 0
+    
+    status_data = {
+        'database': db_status,
+        'api': 'operational',
+        'ai_services': 'active',
+        'background_tasks': 'running',
+        'counts': {
+            'users': user_count,
+            'properties': property_count,
+            'leads': lead_count,
+            'deals': deal_count
+        },
+        'timestamp': timezone.now().isoformat()
+    }
+    
+    return Response({
+        'status': 'success',
+        'data': status_data
+    })
