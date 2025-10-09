@@ -1,0 +1,19 @@
+{
+  "status": "commited",
+  "type": "backend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:8140",
+  "backendAuthType": "basic token",
+  "backendUsername": "arpansarkar@gmail.com",
+  "backendPassword": "arpan051992",
+  "executionArgs": {
+    "projectName": "deelflowai-backend",
+    "projectPath": "D:\\ASUS\\AI Alpha Tech\\projects\\deelflowAI Software\\deelflowai-backend",
+    "testIds": [],
+    "additionalInstruction": "Focus on testing the Add Property functionality specifically. Test the POST /properties/ endpoint with comprehensive test data including all required and optional fields. Verify that property creation works correctly, data is properly validated, and the response contains the expected structure. Test both valid and invalid data scenarios to ensure proper error handling.",
+    "envs": {
+      "API_KEY": "sk-user-1HkacU3wc5fNKmRrvk_3HGEL1UXUEYo0mMR1ZUxh9GpLbI_HQ_SWWs1vwi2scN-sEK0Mi6rqnsdJo7BVd28tgqzbOSeXdR3mBTMRFZ6HQCKr1focF6kBV6mOEwVADeqzqfg"
+    }
+  },
+  "proxy": "http://7a59e7c9-8fdd-40b8-a227-730242ab4413:L8MwAVk1TZZxhTbgrW2UmTuXWEXeiXlj@tun.testsprite.com:8080"
+}
