@@ -1,0 +1,4 @@
+id,property,lead,analysis_type,result,confidence_score,processing_time,created_at
+3,789 Pine Street - $450000.00,Lead 3 - Mike Wilson (new),investment_potential,"High ROI potential, estimated 12% annual return",0.92,1.8,2025-10-09T08:27:33.420833+00:00
+2,456 Oak Avenue - $1200000.00,Lead 2 - Sarah Johnson (new),market_analysis,"Strong market conditions, recommended listing price $1.2M",0.88,3.1,2025-10-09T08:27:33.409506+00:00
+1,123 Main Street - $750000.00,Lead 1 - John Smith (new),property_valuation,"Property valued at $750,000 with 95% confidence",0.95,2.3,2025-10-09T08:27:33.402445+00:00
