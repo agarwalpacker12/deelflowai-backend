@@ -1,7 +1,7 @@
 # DeelFlowAI Backend API Documentation
 
 **Version**: 1.0.0  
-**Base URL**: `http://dev.deelflowai.com:8000` (Development) | `https://api.deelflowai.com` (Production)  
+**Base URL**: `http://localhost:8140` (Development) | `https://api.deelflowai.com` (Production)  
 **Status**: ✅ **Production Ready**  
 **Last Updated**: October 9, 2025  
 **API Version**: v1
@@ -35,17 +35,17 @@ cd deelflowai-backend/fastapi_app
 python main.py
 
 # Production
-uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+uvicorn main:app --host 0.0.0.0 --port 8140 --workers 4
 ```
 
 **Server URLs**:
-- **Development**: `http://dev.deelflowai.com:8000`
+- **Development**: `http://localhost:8140`
 - **Production**: `https://api.deelflowai.com`
 
 ### **API Documentation**
-- **Swagger UI**: `http://dev.deelflowai.com:8000/docs` - Interactive API explorer
-- **ReDoc**: `http://dev.deelflowai.com:8000/redoc` - Clean, readable documentation
-- **OpenAPI Spec**: `http://dev.deelflowai.com:8000/openapi.json` - Machine-readable API specification
+- **Swagger UI**: `http://localhost:8140/docs` - Interactive API explorer
+- **ReDoc**: `http://localhost:8140/redoc` - Clean, readable documentation
+- **OpenAPI Spec**: `http://localhost:8140/openapi.json` - Machine-readable API specification
 
 ### **Interactive Features** 🚀
 - **Try It Out**: Test API endpoints directly in the browser
@@ -1031,20 +1031,33 @@ When upgrading between versions:
 
 ## 🔧 **Frontend Integration Guide**
 
-### **Frontend Configuration** ✅ **NO CHANGES NEEDED**
-The backend is now configured to work with the frontend's existing configuration:
+### **Frontend Configuration** ⚠️ **REQUIRED CHANGES**
 
-1. **API Base URL**: ✅ Already correct (`dev.deelflowai.com:8000`)
-2. **CORS Configuration**: ✅ Backend allows frontend origin
+**Issue Identified**: `dev.deelflowai.com` resolves to a remote server (44.203.111.241), not your local FastAPI server.
+
+**Required Frontend Changes**:
+1. **Update API Base URL** in `src/services/api.js`:
+   ```javascript
+   // Change this line:
+   const BASE_URL = "http://dev.deelflowai.com:8000";
+   
+   // To this:
+   const BASE_URL = "http://localhost:8000";
+   ```
+
+2. **CORS Configuration**: ✅ Backend allows all origins
 3. **WebSocket Configuration**: ✅ Backend accepts all origins
 
-**Frontend can use existing configuration without any changes!**
+**Alternative Solution**: Add hosts file entry (requires admin privileges):
+```
+127.0.0.1 dev.deelflowai.com
+```
 
 ### **Frontend API Integration Examples**
 ```javascript
-// Using axios with authentication (existing frontend code works!)
+// Using axios with authentication (after updating BASE_URL)
 const api = axios.create({
-  baseURL: 'http://dev.deelflowai.com:8000', // ✅ Already correct
+  baseURL: 'http://localhost:8000', // ✅ Updated to localhost
   headers: {
     'Authorization': `Bearer ${accessToken}`
   }
@@ -1087,8 +1100,8 @@ const propertyActivity = await api.post('/recent_activity', {
 
 ## 🎯 **Next Steps for Frontend Team**
 
-### **✅ Phase 1: Configuration - COMPLETED**
-1. **API Configuration**: ✅ Already correct (`dev.deelflowai.com:8000`)
+### **⚠️ Phase 1: Configuration - REQUIRED**
+1. **API Configuration**: ⚠️ Change to `localhost:8000` (see issue below)
 2. **Environment Setup**: ✅ No changes needed
 3. **Vite Configuration**: ✅ No changes needed
 
@@ -1111,7 +1124,7 @@ const propertyActivity = await api.post('/recent_activity', {
 4. **Documentation**: Update frontend documentation
 
 ### **Interactive Testing Resources**
-- **Swagger UI**: `http://dev.deelflowai.com:8000/docs` - Test endpoints directly
+- **Swagger UI**: `http://localhost:8000/docs` - Test endpoints directly
 - **Postman Collection**: Available in `/docs` for import
 - **cURL Examples**: Copy-paste examples from this documentation
 

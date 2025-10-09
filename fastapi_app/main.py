@@ -41,6 +41,8 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:5175",
         "http://127.0.0.1:3000",
+        "http://localhost:5173",  # Vite default port
+        "http://127.0.0.1:5173",  # Vite default port
         "*"  # Allow all origins for development
     ],
     allow_credentials=True,
@@ -433,7 +435,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=8140,
         reload=True,
         log_level="info"
     )
