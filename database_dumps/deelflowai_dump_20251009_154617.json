@@ -1,0 +1,206 @@
+{
+  "metadata": {
+    "created_at": "2025-10-09T15:46:17.307344",
+    "database_type": "SQLite",
+    "total_records": 19,
+    "description": "DeelFlowAI Complete Database Dump"
+  },
+  "tables": {
+    "organizations": {
+      "count": 0,
+      "data": []
+    },
+    "users": {
+      "count": 0,
+      "data": []
+    },
+    "roles": {
+      "count": 0,
+      "data": []
+    },
+    "permissions": {
+      "count": 0,
+      "data": []
+    },
+    "properties": {
+      "count": 5,
+      "data": [
+        {
+          "id": 5,
+          "address": "654 Maple Lane",
+          "city": "Phoenix",
+          "state": "AZ",
+          "zipcode": "85001",
+          "property_type": "townhouse",
+          "price": 280000.0,
+          "bedrooms": 2,
+          "bathrooms": 2.0,
+          "square_feet": 1100,
+          "lot_size": null,
+          "year_built": null,
+          "description": null,
+          "images": [],
+          "status": "active",
+          "ai_analysis": null,
+          "created_at": "2025-10-09T08:27:33.298556+00:00",
+          "updated_at": "2025-10-09T08:27:33.298556+00:00"
+        },
+        {
+          "id": 4,
+          "address": "321 Elm Drive",
+          "city": "Houston",
+          "state": "TX",
+          "zipcode": "77001",
+          "property_type": "house",
+          "price": 350000.0,
+          "bedrooms": 3,
+          "bathrooms": 2.0,
+          "square_feet": 1500,
+          "lot_size": null,
+          "year_built": null,
+          "description": null,
+          "images": [],
+          "status": "active",
+          "ai_analysis": null,
+          "created_at": "2025-10-09T08:27:33.291506+00:00",
+          "updated_at": "2025-10-09T08:27:33.291506+00:00"
+        },
+        {
+          "id": 3,
+          "address": "789 Pine Street",
+          "city": "Chicago",
+          "state": "IL",
+          "zipcode": "60601",
+          "property_type": "condo",
+          "price": 450000.0,
+          "bedrooms": 2,
+          "bathrooms": 2.0,
+          "square_feet": 900,
+          "lot_size": null,
+          "year_built": null,
+          "description": null,
+          "images": [],
+          "status": "pending",
+          "ai_analysis": null,
+          "created_at": "2025-10-09T08:27:33.284444+00:00",
+          "updated_at": "2025-10-09T08:27:33.284444+00:00"
+        },
+        {
+          "id": 2,
+          "address": "456 Oak Avenue",
+          "city": "Los Angeles",
+          "state": "CA",
+          "zipcode": "90210",
+          "property_type": "house",
+          "price": 1200000.0,
+          "bedrooms": 4,
+          "bathrooms": 3.0,
+          "square_feet": 2000,
+          "lot_size": null,
+          "year_built": null,
+          "description": null,
+          "images": [],
+          "status": "active",
+          "ai_analysis": null,
+          "created_at": "2025-10-09T08:27:33.274373+00:00",
+          "updated_at": "2025-10-09T08:27:33.274373+00:00"
+        },
+        {
+          "id": 1,
+          "address": "123 Main Street",
+          "city": "New York",
+          "state": "NY",
+          "zipcode": "10001",
+          "property_type": "apartment",
+          "price": 750000.0,
+          "bedrooms": 3,
+          "bathrooms": 2.0,
+          "square_feet": 1200,
+          "lot_size": null,
+          "year_built": null,
+          "description": null,
+          "images": [],
+          "status": "active",
+          "ai_analysis": null,
+          "created_at": "2025-10-09T08:27:33.259860+00:00",
+          "updated_at": "2025-10-09T08:27:33.259860+00:00"
+        }
+      ]
+    },
+    "leads": {
+      "count": 3,
+      "data": [
+        {
+          "id": 3,
+          "campaign": null,
+          "name": "Mike Wilson",
+          "email": "mike.wilson@email.com",
+          "phone": "+1-555-0103",
+          "address": "300 Investor Blvd",
+          "city": "Chicago",
+          "state": "IL",
+          "zipcode": "60602",
+          "status": "new",
+          "source": "social_media",
+          "motivation_score": 9.1,
+          "property_condition": "excellent",
+          "financial_situation": "cash_buyer",
+          "timeline_urgency": "high",
+          "negotiation_style": "aggressive",
+          "notes": null,
+          "responded": false,
+          "created_at": "2025-10-09T08:27:33.323063+00:00",
+          "updated_at": "2025-10-09T08:27:33.323063+00:00"
+        },
+        {
+          "id": 2,
+          "campaign": null,
+          "name": "Sarah Johnson",
+          "email": "sarah.johnson@email.com",
+          "phone": "+1-555-0102",
+          "address": "200 Seller Avenue",
+          "city": "Los Angeles",
+          "state": "CA",
+          "zipcode": "90211",
+          "status": "new",
+          "source": "referral",
+          "motivation_score": 7.2,
+          "property_condition": "good",
+          "financial_situation": "qualified",
+          "timeline_urgency": "medium",
+          "negotiation_style": "competitive",
+          "notes": null,
+          "responded": false,
+          "created_at": "2025-10-09T08:27:33.314833+00:00",
+          "updated_at": "2025-10-09T08:27:33.314833+00:00"
+        },
+        {
+          "id": 1,
+          "campaign": null,
+          "name": "John Smith",
+          "email": "john.smith@email.com",
+          "phone": "+1-555-0101",
+          "address": "100 Buyer Street",
+          "city": "New York",
+          "state": "NY",
+          "zipcode": "10002",
+          "status": "new",
+          "source": "website",
+          "motivation_score": 8.5,
+          "property_condition": "excellent",
+          "financial_situation": "pre_approved",
+          "timeline_urgency": "high",
+          "negotiation_style": "collaborative",
+          "notes": null,
+          "responded": false,
+          "created_at": "2025-10-09T08:27:33.305154+00:00",
+          "updated_at": "2025-10-09T08:27:33.305154+00:00"
+        }
+      ]
+    },
+    "deals": {
+      "count": 3,
+      "data": [
+        {
+          "id": 3,
+          "property": 

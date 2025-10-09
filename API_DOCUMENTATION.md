@@ -1,4 +1,4 @@
-# DeelFlowAI Backend API Documentation
+ # DeelFlowAI Backend API Documentation
 
 **Version**: 1.0.0  
 **Base URL**: `http://localhost:8140` (Development) | `https://api.deelflowai.com` (Production)  
@@ -256,20 +256,49 @@ POST /api/auth/register
 Content-Type: application/json
 
 {
-  "email": "newuser@deelflowai.com",
-  "password": "newpassword123",
-  "name": "New User",
-  "organization_id": 1
+  "first_name": "John",
+  "last_name": "Doe",
+  "organization_name": "Test Company",
+  "phone": "555-1234",
+  "email": "john.doe@test.com",
+  "password": "password123"
 }
 ```
 
 **Request Parameters:**
 | Field | Type | Required | Constraints | Description |
 |-------|------|----------|-------------|-------------|
+| first_name | string | Yes | Min 2 characters | User's first name |
+| last_name | string | Yes | Min 2 characters | User's last name |
+| organization_name | string | Yes | Min 2 characters | Organization name |
+| phone | string | No | Valid phone format | User's phone number |
 | email | string | Yes | Valid email format, unique | User's email address |
 | password | string | Yes | Min 8 characters, alphanumeric | User's password |
-| name | string | Yes | Min 2 characters | User's full name |
-| organization_id | integer | No | Valid org ID | Organization to join |
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Registration successful",
+  "data": {
+    "user": {
+      "id": 2,
+      "email": "john.doe@test.com",
+      "first_name": "John",
+      "last_name": "Doe",
+      "full_name": "John Doe",
+      "phone": "555-1234",
+      "organization_name": "Test Company",
+      "role": "user"
+    },
+    "tokens": {
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "expires_in": 3600,
+      "token_type": "bearer"
+    }
+  }
+}
 
 ### **Logout**
 ```http
