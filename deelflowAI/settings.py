@@ -84,8 +84,12 @@ WSGI_APPLICATION = 'deelflowAI.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'fastapi_app' / 'deelflowai.db',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'deelflowai',
+        'USER': 'postgres',
+        'PASSWORD': 'Awhpr148',
+        'HOST': '44.203.111.241',
+        'PORT': '5432',
     }
 }
 

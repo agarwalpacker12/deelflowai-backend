@@ -2,123 +2,37 @@
 DeelFlowAI FastAPI Application
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 import os
 import sys
 import django
+import datetime
 from pathlib import Path
 
 # Mock data functions (replacing deleted database module)
-def get_dashboard_stats():
-    """Mock dashboard statistics"""
-    return {
-        'total_revenue': 125000.50,
-        'active_users': 150,
-        'total_properties': 89,
-        'total_deals': 45,
-        'monthly_profit': 25000.75,
-        'ai_conversations': 1250,
-        'ai_accuracy': 87.5,
-        'voice_calls': 156,
-        'compliance_status': 'healthy'
-    }
+# Import database functions
+from database import (
+    get_dashboard_stats,
+    get_ai_metrics,
+    get_tenant_management_data,
+    get_opportunity_cost_data,
+    get_revenue_growth_data,
+    get_market_alerts_data,
+    get_live_activity_data,
+    get_performance_metrics
+)
 
-def get_ai_metrics():
-    """Mock AI metrics data"""
-    return {
-        'vision_accuracy': 92.3,
-        'nlp_accuracy': 88.7,
-        'voice_success_rate': 87.5,
-        'blockchain_success_rate': 95.2,
-        'overall_performance': 90.9,
-        'total_analyses': 1250,
-        'processing_time_avg': 2.3
-    }
 
-def get_tenant_management_data():
-    """Mock tenant management data"""
-    return {
-        'total_tenants': 25,
-        'active_tenants': 23,
-        'inactive_tenants': 2,
-        'total_users': 150,
-        'monthly_revenue': 25000.75,
-        'growth_rate': 12.5
-    }
 
-def get_opportunity_cost_data():
-    """Mock opportunity cost data"""
-    return {
-        'total_revenue': 125000.50,
-        'monthly_profit': 25000.75,
-        'properties_listed': 89,
-        'total_deals': 45,
-        'opportunity_cost': 12500.05,
-        'efficiency_score': 85.5,
-        'recommendations': [
-            'Increase lead conversion rate by 15%',
-            'Optimize property listing strategy',
-            'Improve deal closing timeline'
-        ]
-    }
 
-def get_revenue_growth_data():
-    """Mock revenue growth data"""
-    return {
-        'revenue_growth': 12.5,
-        'user_growth': 8.3,
-        'property_growth': 15.2,
-        'deal_growth': 22.1,
-        'profit_growth': 18.7,
-        'monthly_breakdown': [
-            {'month': 'Jan', 'revenue': 100000},
-            {'month': 'Feb', 'revenue': 110000},
-            {'month': 'Mar', 'revenue': 125000}
-        ]
-    }
 
-def get_market_alerts_data():
-    """Mock market alerts data"""
-    return {
-        'alerts': [
-            {'type': 'opportunity', 'message': 'New distressed property in Miami', 'priority': 'high'},
-            {'type': 'market', 'message': 'Price increase in downtown area', 'priority': 'medium'},
-            {'type': 'lead', 'message': 'High-value lead identified', 'priority': 'high'}
-        ],
-        'opportunities': 5,
-        'warnings': 2,
-        'last_updated': '2025-10-09T04:30:00Z'
-    }
 
-def get_live_activity_data():
-    """Mock live activity data"""
-    return {
-        'activities': [
-            {'event': 'New lead added', 'timestamp': '2025-10-09T04:25:00Z', 'user': 'System'},
-            {'event': 'Property analysis completed', 'timestamp': '2025-10-09T04:20:00Z', 'user': 'AI'},
-            {'event': 'Deal updated', 'timestamp': '2025-10-09T04:15:00Z', 'user': 'Agent'},
-            {'event': 'Campaign launched', 'timestamp': '2025-10-09T04:10:00Z', 'user': 'Admin'}
-        ],
-        'total_activities': 156,
-        'last_updated': '2025-10-09T04:30:00Z'
-    }
 
-def get_performance_metrics():
-    """Mock performance metrics"""
-    return {
-        'overall_score': 87.5,
-        'response_time': 1.2,
-        'uptime': 99.9,
-        'error_rate': 0.1,
-        'user_satisfaction': 4.5,
-        'system_health': 'excellent',
-        'last_updated': '2025-10-09T04:30:00Z'
-    }
 
 # Add Django project to Python path
 django_project_path = Path(__file__).parent.parent
@@ -145,14 +59,13 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://dev.deelflowai.com:8000",
+        "http://dev.deelflowai.com:8140",
+        "http://localhost:5173",  # Vite default port
         "http://localhost:5175",
         "http://localhost:3000",
-        "http://127.0.0.1:5175",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",  # Vite default port
         "http://127.0.0.1:5173",  # Vite default port
-        "*"  # Allow all origins for development
+        "http://127.0.0.1:5175",
+        "http://127.0.0.1:3000"
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -392,6 +305,225 @@ async def get_voice_ai_calls_count_trailing():
         'updated_at': '2025-10-09T04:30:00Z'
     }
 
+# Dashboard API endpoints
+@app.get("/api/total-revenue/")
+@app.options("/api/total-revenue/")
+async def get_api_total_revenue():
+    """Get total revenue metrics"""
+    stats = await get_dashboard_stats()
+    return {
+        "status": "success",
+        "data": {
+            "totalRevenue": stats.get("totalRevenue", 0),
+            "monthlyRevenue": stats.get("monthlyRevenue", 0),
+            "growthRate": stats.get("growthRate", 0)
+        }
+    }
+
+@app.get("/api/active-users/")
+@app.options("/api/active-users/")
+async def get_api_active_users():
+    """Get active users count"""
+    stats = await get_dashboard_stats()
+    return {
+        "status": "success",
+        "data": {
+            "activeUsers": stats.get("totalUsers", 0),
+            "newUsers": stats.get("recentUsers", 0),
+            "userGrowth": 15.2
+        }
+    }
+
+@app.get("/api/properties-listed/")
+@app.options("/api/properties-listed/")
+async def get_api_properties_listed():
+    """Get properties listed count"""
+    stats = await get_dashboard_stats()
+    return {
+        "status": "success",
+        "data": {
+            "totalProperties": stats.get("totalProperties", 0),
+            "activeListings": stats.get("totalProperties", 0),
+            "soldThisMonth": stats.get("recentProperties", 0)
+        }
+    }
+
+@app.get("/api/ai-conversations/")
+@app.options("/api/ai-conversations/")
+async def get_api_ai_conversations():
+    """Get AI conversations count"""
+    ai_metrics = await get_ai_metrics()
+    return {
+        "status": "success",
+        "data": {
+            "totalConversations": ai_metrics.get("totalAnalyses", 0),
+            "activeConversations": ai_metrics.get("totalAnalyses", 0),
+            "avgResponseTime": 2.3
+        }
+    }
+
+@app.get("/api/total-deals/")
+@app.options("/api/total-deals/")
+async def get_api_total_deals():
+    """Get total deals count"""
+    stats = await get_dashboard_stats()
+    return {
+        "status": "success",
+        "data": {
+            "totalDeals": stats.get("totalDeals", 0),
+            "closedThisMonth": stats.get("recentDeals", 0),
+            "pendingDeals": stats.get("totalDeals", 0)
+        }
+    }
+
+@app.get("/api/monthly-profit/")
+@app.options("/api/monthly-profit/")
+async def get_api_monthly_profit():
+    """Get monthly profit metrics"""
+    return {
+        "status": "success",
+        "data": {
+            "monthlyProfit": 25000.75,
+            "profitMargin": 18.5,
+            "profitGrowth": 8.2
+        }
+    }
+
+@app.get("/api/voice-calls-count/")
+@app.options("/api/voice-calls-count/")
+async def get_api_voice_calls_count():
+    """Get voice calls count"""
+    return {
+        "status": "success",
+        "data": {
+            "totalCalls": 89,
+            "callsToday": 12,
+            "avgCallDuration": 4.5
+        }
+    }
+
+@app.get("/api/compliance-status/")
+@app.options("/api/compliance-status/")
+async def get_api_compliance_status():
+    """Get compliance status"""
+    return {
+        "status": "success",
+        "data": {
+            "complianceScore": 95.5,
+            "pendingReviews": 3,
+            "lastAudit": "2024-01-15"
+        }
+    }
+
+@app.get("/api/live-activity-feed/")
+@app.options("/api/live-activity-feed/")
+async def get_api_live_activity_feed():
+    """Get live activity feed"""
+    return {
+        "status": "success",
+        "data": [
+            {
+                "id": 1,
+                "type": "property_viewed",
+                "message": "Property 123 Main St viewed by lead",
+                "timestamp": "2024-01-15T10:30:00Z"
+            },
+            {
+                "id": 2,
+                "type": "deal_updated",
+                "message": "Deal #456 status updated to 'Under Contract'",
+                "timestamp": "2024-01-15T09:15:00Z"
+            }
+        ]
+    }
+
+@app.get("/api/revenue-user-growth-chart-data/")
+@app.options("/api/revenue-user-growth-chart-data/")
+async def get_api_revenue_user_growth_chart_data():
+    """Get revenue and user growth chart data"""
+    return {
+        "status": "success",
+        "data": {
+            "revenueData": [10000, 12000, 15000, 18000, 20000, 22000, 25000],
+            "userData": [10, 15, 22, 28, 35, 42, 45],
+            "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"]
+        }
+    }
+
+@app.get("/api/vision-analysis/")
+@app.options("/api/vision-analysis/")
+async def get_api_vision_analysis():
+    """Get vision analysis metrics"""
+    return {
+        "status": "success",
+        "data": {
+            "imagesProcessed": 156,
+            "accuracy": 94.2,
+            "processingTime": 1.8
+        }
+    }
+
+@app.get("/api/nlp-processing/")
+@app.options("/api/nlp-processing/")
+async def get_api_nlp_processing():
+    """Get NLP processing metrics"""
+    return {
+        "status": "success",
+        "data": {
+            "documentsProcessed": 89,
+            "sentimentAccuracy": 91.5,
+            "avgProcessingTime": 2.1
+        }
+    }
+
+@app.get("/api/blockchain-txns/")
+@app.options("/api/blockchain-txns/")
+async def get_api_blockchain_txns():
+    """Get blockchain transactions count"""
+    return {
+        "status": "success",
+        "data": {
+            "totalTransactions": 234,
+            "pendingTransactions": 12,
+            "avgConfirmationTime": 3.2
+        }
+    }
+
+@app.get("/api/ai-metrics/overall-accuracy/")
+@app.options("/api/ai-metrics/overall-accuracy/")
+async def get_api_ai_metrics_overall_accuracy():
+    """Get AI overall accuracy metrics"""
+    return {
+        "status": "success",
+        "data": {
+            "overallAccuracy": 92.8,
+            "predictionAccuracy": 89.5,
+            "classificationAccuracy": 95.1
+        }
+    }
+
+@app.get("/api/market-alerts/recent/")
+@app.options("/api/market-alerts/recent/")
+async def get_api_market_alerts_recent():
+    """Get recent market alerts"""
+    return {
+        "status": "success",
+        "data": [
+            {
+                "id": 1,
+                "type": "price_drop",
+                "message": "Property prices dropped 5% in downtown area",
+                "timestamp": "2024-01-15T08:00:00Z"
+            },
+            {
+                "id": 2,
+                "type": "market_trend",
+                "message": "High demand detected for 3-bedroom properties",
+                "timestamp": "2024-01-15T07:30:00Z"
+            }
+        ]
+    }
+
 @app.get("/api/tenant-management/stats/")
 @app.options("/api/tenant-management/stats/")
 async def get_tenant_management_stats_trailing():
@@ -465,21 +597,77 @@ async def login():
     return {
         "status": "success",
         "message": "Login successful",
-        "data": {
+        "user": {
+            "id": user_id,
+            "email": user_email,
+            "name": "Admin User",
+            "role": "admin"
+        },
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "expires_in": 3600,
+        "token_type": "bearer"
+    }
+
+@app.post("/test-login/")
+async def test_login(request: Request):
+    """Test login endpoint"""
+    try:
+        credentials = await request.json()
+        return {"status": "success", "data": credentials}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/login/")
+async def login_with_trailing_slash(request: Request):
+    """User login endpoint with trailing slash to match frontend calls"""
+    
+    # Get credentials from request body
+    try:
+        credentials = await request.json()
+    except:
+        credentials = {}
+    
+    # Accept both username and email fields
+    username_or_email = credentials.get("username") or credentials.get("email", "")
+    password = credentials.get("password", "")
+    
+    # Mock authentication (accept any credentials for now)
+    if username_or_email and password:
+        user_id = 1
+        
+        # Create mock tokens (simplified for now)
+        access_token = f"mock_access_token_{user_id}_{username_or_email}"
+        refresh_token = f"mock_refresh_token_{user_id}_{username_or_email}"
+        
+        return {
+            "status": "success",
+            "message": "Login successful",
+            "data": {
+                "token": access_token,  # Frontend expects 'token' not 'access_token'
+                "user": {
+                    "id": user_id,
+                    "email": username_or_email,
+                    "name": "Admin User",
+                    "role": "admin"
+                }
+            },
             "user": {
                 "id": user_id,
-                "email": user_email,
+                "email": username_or_email,
                 "name": "Admin User",
                 "role": "admin"
             },
-            "tokens": {
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "expires_in": 3600,
-                "token_type": "bearer"
-            }
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_in": 3600,
+            "token_type": "bearer"
         }
-    }
+    else:
+        return JSONResponse(
+            status_code=401,
+            content={"status": "error", "message": "Invalid credentials"}
+        )
 
 class RegisterRequest(BaseModel):
     """Registration request model"""
@@ -1019,6 +1207,46 @@ async def get_tenant_management_stats_frontend():
 
 # ==================== PROPERTY MANAGEMENT ENDPOINTS ====================
 
+@app.get("/api/properties/")
+@app.options("/api/properties/")
+async def get_properties():
+    """Get all properties"""
+    return {
+        "status": "success",
+        "data": [
+            {
+                "id": 1,
+                "address": "123 Main St",
+                "unit": None,
+                "city": "Atlanta",
+                "state": "GA",
+                "zip": "30309",
+                "county": "Fulton",
+                "property_type": "Single Family",
+                "bedrooms": 3,
+                "bathrooms": 2.0,
+                "square_feet": 1500,
+                "lot_size": 0.25,
+                "year_built": 2010,
+                "purchase_price": 200000.0,
+                "arv": 250000.0,
+                "repair_estimate": 15000.0,
+                "holding_costs": 5000.0,
+                "transaction_type": "sale",
+                "assignment_fee": 10000.0,
+                "description": "Beautiful single family home in prime location",
+                "seller_notes": "Motivated seller",
+                "potential_profit": 25000.0,
+                "status": "active",
+                "created_at": "2025-10-09T04:30:00Z",
+                "updated_at": "2025-10-09T04:30:00Z"
+            }
+        ],
+        "total": 1,
+        "page": 1,
+        "limit": 20
+    }
+
 class PropertyCreate(BaseModel):
     """Property creation request model"""
     address: str
@@ -1026,7 +1254,7 @@ class PropertyCreate(BaseModel):
     city: str
     state: str
     zip: str
-    county: str
+    county: Optional[str] = "Unknown"
     property_type: str
     bedrooms: Optional[int] = None
     bathrooms: Optional[float] = None
@@ -1037,7 +1265,7 @@ class PropertyCreate(BaseModel):
     arv: Optional[float] = None
     repair_estimate: Optional[float] = None
     holding_costs: Optional[float] = None
-    transaction_type: str
+    transaction_type: Optional[str] = "sale"
     assignment_fee: Optional[float] = None
     description: str
     seller_notes: Optional[str] = None
@@ -1069,6 +1297,12 @@ class PropertyUpdate(BaseModel):
 @app.options("/properties/")
 async def get_properties():
     """Get all properties"""
+    # Calculate potential profit for each property
+    purchase_price = 200000.0
+    arv = 250000.0
+    repair_estimate = 15000.0
+    potential_profit = arv - purchase_price - repair_estimate
+    
     return {
         "status": "success",
         "data": [
@@ -1086,14 +1320,15 @@ async def get_properties():
                 "square_feet": 1500,
                 "lot_size": 0.25,
                 "year_built": 2020,
-                "purchase_price": 200000.0,
-                "arv": 250000.0,
-                "repair_estimate": 15000.0,
+                "purchase_price": purchase_price,
+                "arv": arv,
+                "repair_estimate": repair_estimate,
                 "holding_costs": 5000.0,
                 "transaction_type": "Wholesale",
                 "assignment_fee": 10000.0,
                 "description": "Beautiful single family home",
                 "seller_notes": "Motivated seller",
+                "potential_profit": potential_profit,
                 "status": "active",
                 "created_at": "2025-10-09T04:30:00Z",
                 "updated_at": "2025-10-09T04:30:00Z"
@@ -1151,10 +1386,68 @@ async def create_property(property_data: PropertyCreate):
         "data": new_property
     }
 
+@app.post("/api/properties/")
+@app.options("/api/properties/")
+async def create_property_api(property_data: PropertyCreate):
+    """Create a new property via /api/properties/ endpoint"""
+    # Generate a new property ID
+    property_id = 2
+    
+    # Calculate potential profit
+    purchase_price = property_data.purchase_price or 0
+    arv = property_data.arv or 0
+    repair_estimate = property_data.repair_estimate or 0
+    potential_profit = arv - purchase_price - repair_estimate
+    
+    new_property = {
+        "id": property_id,
+        "address": property_data.address,
+        "unit": property_data.unit,
+        "city": property_data.city,
+        "state": property_data.state,
+        "zip": property_data.zip,
+        "county": property_data.county,
+        "property_type": property_data.property_type,
+        "bedrooms": property_data.bedrooms,
+        "bathrooms": property_data.bathrooms,
+        "square_feet": property_data.square_feet,
+        "lot_size": property_data.lot_size,
+        "year_built": property_data.year_built,
+        "purchase_price": purchase_price,
+        "arv": arv,
+        "repair_estimate": repair_estimate,
+        "holding_costs": property_data.holding_costs,
+        "transaction_type": property_data.transaction_type,
+        "assignment_fee": property_data.assignment_fee,
+        "description": property_data.description,
+        "seller_notes": property_data.seller_notes,
+        "potential_profit": potential_profit,
+        "status": "active",
+        "created_at": "2025-10-09T04:30:00Z",
+        "updated_at": "2025-10-09T04:30:00Z"
+    }
+    
+    return {
+        "status": "success",
+        "message": "Property created successfully",
+        "data": new_property
+    }
+
+# Store updated properties in memory for testing
+updated_properties = {}
+
 @app.get("/properties/{property_id}/")
 @app.options("/properties/{property_id}/")
 async def get_property(property_id: int):
     """Get a specific property by ID"""
+    # Check if property has been updated
+    if property_id in updated_properties:
+        return {
+            "status": "success",
+            "data": updated_properties[property_id]
+        }
+    
+    # Default property data
     return {
         "status": "success",
         "data": {
@@ -1179,6 +1472,7 @@ async def get_property(property_id: int):
             "assignment_fee": 10000.0,
             "description": "Beautiful single family home",
             "seller_notes": "Motivated seller",
+            "potential_profit": 35000.0,
             "status": "active",
             "created_at": "2025-10-09T04:30:00Z",
             "updated_at": "2025-10-09T04:30:00Z"
@@ -1192,14 +1486,42 @@ async def update_property(property_id: int, property_data: PropertyUpdate):
     # Filter out None values for partial updates
     update_data = {k: v for k, v in property_data.dict().items() if v is not None}
     
+    # Store the updated property data
+    updated_property = {
+        "id": property_id,
+        "address": update_data.get("address", "123 Main St"),
+        "unit": update_data.get("unit", "Apt 1"),
+        "city": update_data.get("city", "Atlanta"),
+        "state": update_data.get("state", "GA"),
+        "zip": update_data.get("zip", "30309"),
+        "county": update_data.get("county", "Fulton"),
+        "property_type": update_data.get("property_type", "Single Family"),
+        "bedrooms": update_data.get("bedrooms", 3),
+        "bathrooms": update_data.get("bathrooms", 2.0),
+        "square_feet": update_data.get("square_feet", 1500),
+        "lot_size": update_data.get("lot_size", 0.25),
+        "year_built": update_data.get("year_built", 2020),
+        "purchase_price": update_data.get("purchase_price", 200000.0),
+        "arv": update_data.get("arv", 250000.0),
+        "repair_estimate": update_data.get("repair_estimate", 15000.0),
+        "holding_costs": update_data.get("holding_costs", 5000.0),
+        "transaction_type": update_data.get("transaction_type", "Wholesale"),
+        "assignment_fee": update_data.get("assignment_fee", 10000.0),
+        "description": update_data.get("description", "Beautiful single family home"),
+        "seller_notes": update_data.get("seller_notes", "Motivated seller"),
+        "potential_profit": 35000.0,
+        "status": "active",
+        "created_at": "2025-10-09T04:30:00Z",
+        "updated_at": "2025-10-09T04:30:00Z"
+    }
+    
+    # Store the updated property
+    updated_properties[property_id] = updated_property
+    
     return {
         "status": "success",
         "message": "Property updated successfully",
-        "data": {
-            "id": property_id,
-            **update_data,
-            "updated_at": "2025-10-09T04:30:00Z"
-        }
+        "data": updated_property
     }
 
 @app.delete("/properties/{property_id}/")
@@ -1238,6 +1560,277 @@ async def get_property_ai_analysis(property_id: int):
                 "Market conditions are favorable for this area"
             ],
             "created_at": "2025-10-09T04:30:00Z"
+        }
+    }
+
+# ==================== CAMPAIGN MANAGEMENT ENDPOINTS ====================
+
+class CampaignCreate(BaseModel):
+    """Campaign creation request model with all required fields"""
+    # Basic campaign information
+    name: str
+    campaign_type: str
+    channel: str = "email"
+    budget: float
+    scheduled_at: str
+    subject_line: str
+    email_content: str
+    use_ai_personalization: bool = True
+    status: str = "draft"
+    
+    # Geographic scope (for general campaigns)
+    geographic_scope_type: str = "zip"
+    geographic_scope_values: List[str] = []
+    
+    # Basic property filters
+    location: str = "Atlanta, GA"
+    property_type: str = "Single Family"
+    minimum_equity: float = 0
+    min_price: float = 250000
+    max_price: float = 750000
+    distress_indicators: List[str] = []
+    
+    # Buyer Finder - Demographic Details
+    last_qualification: str = ""
+    age_range: str = ""
+    ethnicity: str = ""
+    salary_range: str = ""
+    marital_status: str = ""
+    employment_status: str = ""
+    home_ownership_status: str = ""
+    
+    # Buyer Finder - Geographic Details
+    buyer_country: str = ""
+    buyer_state: str = ""
+    buyer_counties: str = ""
+    buyer_city: str = ""
+    buyer_districts: str = ""
+    buyer_parish: str = ""
+    
+    # Seller Finder - Geographic Details
+    seller_country: str = ""
+    seller_state: str = ""
+    seller_counties: str = ""
+    seller_city: str = ""
+    seller_districts: str = ""
+    seller_parish: str = ""
+    
+    # Seller Finder - Additional Fields
+    property_year_built_min: str = ""
+    property_year_built_max: str = ""
+    seller_keywords: str = ""
+
+class CampaignUpdate(BaseModel):
+    """Campaign update request model - all fields optional for partial updates"""
+    name: Optional[str] = None
+    campaign_type: Optional[str] = None
+    channel: Optional[str] = None
+    budget: Optional[float] = None
+    scheduled_at: Optional[str] = None
+    subject_line: Optional[str] = None
+    email_content: Optional[str] = None
+    use_ai_personalization: Optional[bool] = None
+    status: Optional[str] = None
+    geographic_scope_type: Optional[str] = None
+    geographic_scope_values: Optional[List[str]] = None
+    location: Optional[str] = None
+    property_type: Optional[str] = None
+    minimum_equity: Optional[float] = None
+    min_price: Optional[float] = None
+    max_price: Optional[float] = None
+    distress_indicators: Optional[List[str]] = None
+    last_qualification: Optional[str] = None
+    age_range: Optional[str] = None
+    ethnicity: Optional[str] = None
+    salary_range: Optional[str] = None
+    marital_status: Optional[str] = None
+    employment_status: Optional[str] = None
+    home_ownership_status: Optional[str] = None
+    buyer_country: Optional[str] = None
+    buyer_state: Optional[str] = None
+    buyer_counties: Optional[str] = None
+    buyer_city: Optional[str] = None
+    buyer_districts: Optional[str] = None
+    buyer_parish: Optional[str] = None
+    seller_country: Optional[str] = None
+    seller_state: Optional[str] = None
+    seller_counties: Optional[str] = None
+    seller_city: Optional[str] = None
+    seller_districts: Optional[str] = None
+    seller_parish: Optional[str] = None
+    property_year_built_min: Optional[str] = None
+    property_year_built_max: Optional[str] = None
+    seller_keywords: Optional[str] = None
+
+@app.get("/campaigns/")
+@app.options("/campaigns/")
+async def get_campaigns():
+    """Get all campaigns"""
+    return {
+        "status": "success",
+        "data": [
+            {
+                "id": 1,
+                "name": "Q4 Property Marketing Campaign",
+                "campaign_type": "new",
+                "channel": "email",
+                "budget": 5000.0,
+                "scheduled_at": "2025-10-15T09:00:00Z",
+                "subject_line": "Exclusive Property Investment Opportunities",
+                "email_content": "Discover amazing real estate investment opportunities...",
+                "use_ai_personalization": True,
+                "status": "active",
+                "geographic_scope_type": "zip",
+                "geographic_scope_values": ["30309", "30310", "30311"],
+                "location": "Atlanta, GA",
+                "property_type": "Single Family",
+                "minimum_equity": 50000,
+                "min_price": 200000,
+                "max_price": 500000,
+                "distress_indicators": ["foreclosure", "short_sale"],
+                "last_qualification": "2025-10-01",
+                "age_range": "25-55",
+                "ethnicity": "all",
+                "salary_range": "50000-150000",
+                "marital_status": "all",
+                "employment_status": "employed",
+                "home_ownership_status": "renting",
+                "buyer_country": "USA",
+                "buyer_state": "GA",
+                "buyer_counties": "Fulton, DeKalb",
+                "buyer_city": "Atlanta",
+                "buyer_districts": "Downtown, Midtown",
+                "buyer_parish": "",
+                "seller_country": "USA",
+                "seller_state": "GA",
+                "seller_counties": "Fulton, DeKalb",
+                "seller_city": "Atlanta",
+                "seller_districts": "Downtown, Midtown",
+                "seller_parish": "",
+                "property_year_built_min": "1990",
+                "property_year_built_max": "2020",
+                "seller_keywords": "motivated, quick sale, investment",
+                "created_at": "2025-10-09T04:30:00Z",
+                "updated_at": "2025-10-09T04:30:00Z"
+            }
+        ],
+        "total": 1,
+        "page": 1,
+        "limit": 20
+    }
+
+@app.post("/campaigns/")
+@app.options("/campaigns/")
+async def create_campaign(campaign_data: CampaignCreate):
+    """Create a new campaign"""
+    # Generate a new campaign ID
+    campaign_id = 2
+    
+    new_campaign = {
+        "id": campaign_id,
+        **campaign_data.dict(),
+        "created_at": "2025-10-09T04:30:00Z",
+        "updated_at": "2025-10-09T04:30:00Z"
+    }
+    
+    return {
+        "status": "success",
+        "message": "Campaign created successfully",
+        "data": new_campaign
+    }
+
+@app.get("/campaigns/{campaign_id}/")
+@app.options("/campaigns/{campaign_id}/")
+async def get_campaign(campaign_id: int):
+    """Get a specific campaign by ID"""
+    return {
+        "status": "success",
+        "data": {
+            "id": campaign_id,
+            "name": "Sample Campaign",
+            "campaign_type": "new",
+            "channel": "email",
+            "budget": 5000.0,
+            "scheduled_at": "2025-10-15T09:00:00Z",
+            "subject_line": "Exclusive Property Investment Opportunities",
+            "email_content": "Discover amazing real estate investment opportunities...",
+            "use_ai_personalization": True,
+            "status": "active",
+            "geographic_scope_type": "zip",
+            "geographic_scope_values": ["30309", "30310"],
+            "location": "Atlanta, GA",
+            "property_type": "Single Family",
+            "minimum_equity": 50000,
+            "min_price": 200000,
+            "max_price": 500000,
+            "distress_indicators": ["foreclosure"],
+            "created_at": "2025-10-09T04:30:00Z",
+            "updated_at": "2025-10-09T04:30:00Z"
+        }
+    }
+
+@app.put("/campaigns/{campaign_id}/")
+@app.options("/campaigns/{campaign_id}/")
+async def update_campaign(campaign_id: int, campaign_data: CampaignUpdate):
+    """Update a campaign"""
+    # Filter out None values for partial updates
+    update_data = {k: v for k, v in campaign_data.dict().items() if v is not None}
+    
+    return {
+        "status": "success",
+        "message": "Campaign updated successfully",
+        "data": {
+            "id": campaign_id,
+            **update_data,
+            "updated_at": "2025-10-09T04:30:00Z"
+        }
+    }
+
+@app.delete("/campaigns/{campaign_id}/")
+@app.options("/campaigns/{campaign_id}/")
+async def delete_campaign(campaign_id: int):
+    """Delete a campaign"""
+    return {
+        "status": "success",
+        "message": "Campaign deleted successfully"
+    }
+
+# Add missing endpoints that frontend is calling directly
+@app.get("/overall-accuracy")
+@app.options("/overall-accuracy")
+@app.get("/overall-accuracy/")
+@app.options("/overall-accuracy/")
+async def get_overall_accuracy_direct():
+    """Get overall AI accuracy - direct endpoint"""
+    return {
+        "status": "success",
+        "data": {
+            "ai_accuracy": 94.2,
+            "improvement": 5.8
+        }
+    }
+
+@app.get("/recent")
+@app.options("/recent")
+@app.get("/recent/")
+@app.options("/recent/")
+async def get_recent_direct():
+    """Get recent market alerts - direct endpoint"""
+    return {
+        "status": "success",
+        "data": {
+            "alerts": [
+                {
+                    "type": "opportunity",
+                    "message": "New distressed property in Miami",
+                    "priority": "high"
+                },
+                {
+                    "type": "market",
+                    "message": "Price increase in downtown area",
+                    "priority": "medium"
+                }
+            ]
         }
     }
 
