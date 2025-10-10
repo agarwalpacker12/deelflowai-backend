@@ -1,4 +1,0 @@
-id,campaign,name,email,phone,address,city,state,zipcode,status,source,motivation_score,property_condition,financial_situation,timeline_urgency,negotiation_style,notes,responded,created_at,updated_at
-3,,Mike Wilson,mike.wilson@email.com,+1-555-0103,300 Investor Blvd,Chicago,IL,60602,new,social_media,9.1,excellent,cash_buyer,high,aggressive,,False,2025-10-09T08:27:33.323063+00:00,2025-10-09T08:27:33.323063+00:00
-2,,Sarah Johnson,sarah.johnson@email.com,+1-555-0102,200 Seller Avenue,Los Angeles,CA,90211,new,referral,7.2,good,qualified,medium,competitive,,False,2025-10-09T08:27:33.314833+00:00,2025-10-09T08:27:33.314833+00:00
-1,,John Smith,john.smith@email.com,+1-555-0101,100 Buyer Street,New York,NY,10002,new,website,8.5,excellent,pre_approved,high,collaborative,,False,2025-10-09T08:27:33.305154+00:00,2025-10-09T08:27:33.305154+00:00

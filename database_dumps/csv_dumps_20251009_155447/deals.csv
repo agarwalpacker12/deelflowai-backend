@@ -1,4 +1,0 @@
-id,property,buyer_lead,seller_lead,deal_type,status,offer_price,final_price,commission,closing_date,notes,created_at,updated_at
-3,789 Pine Street - $450000.00,Lead 3 - Mike Wilson (new),,sale,active,450000.0,,,,Initial offer submitted,2025-10-09T08:27:33.395415+00:00,2025-10-09T08:27:33.395415+00:00
-2,456 Oak Avenue - $1200000.00,Lead 2 - Sarah Johnson (new),,sale,pending,1200000.0,1180000.0,35400.0,2025-10-24T13:57:33.332935+00:00,"Under contract, awaiting inspection",2025-10-09T08:27:33.387358+00:00,2025-10-09T08:27:33.387358+00:00
-1,123 Main Street - $750000.00,Lead 1 - John Smith (new),,sale,closed,750000.0,745000.0,22350.0,2025-09-09T13:57:33.332935+00:00,Successful closing with minor price negotiation,2025-10-09T08:27:33.375251+00:00,2025-10-09T08:27:33.375251+00:00

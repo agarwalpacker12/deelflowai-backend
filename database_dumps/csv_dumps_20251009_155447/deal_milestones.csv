@@ -1,6 +1,0 @@
-id,deal,title,description,status,due_date,completed_date,created_at,updated_at
-1,Deal 1 - 123 Main Street,Initial Offer Submitted,Buyer submitted initial offer,completed,2025-08-25T13:57:33.427796+00:00,2025-08-25T13:57:33.427796+00:00,2025-10-09T08:27:33.429318+00:00,2025-10-09T08:27:33.429318+00:00
-2,Deal 1 - 123 Main Street,Inspection Completed,Property inspection passed with minor issues,completed,2025-09-04T13:57:33.427796+00:00,2025-09-04T13:57:33.427796+00:00,2025-10-09T08:27:33.435856+00:00,2025-10-09T08:27:33.435856+00:00
-3,Deal 1 - 123 Main Street,Closing Completed,Deal successfully closed,completed,2025-09-09T13:57:33.427796+00:00,2025-09-09T13:57:33.427796+00:00,2025-10-09T08:27:33.443775+00:00,2025-10-09T08:27:33.443775+00:00
-4,Deal 2 - 456 Oak Avenue,Contract Signed,Purchase agreement executed,completed,2025-09-29T13:57:33.427796+00:00,2025-09-29T13:57:33.427796+00:00,2025-10-09T08:27:33.451097+00:00,2025-10-09T08:27:33.451097+00:00
-5,Deal 2 - 456 Oak Avenue,Inspection Scheduled,Property inspection scheduled for next week,pending,2025-10-16T13:57:33.427796+00:00,,2025-10-09T08:27:33.457631+00:00,2025-10-09T08:27:33.457631+00:00
