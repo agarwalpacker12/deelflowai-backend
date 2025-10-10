@@ -15,5 +15,5 @@ djangorestframework-simplejwt==5.5.1
 django-cors-headers==4.3.1
 python-dotenv==1.0.0
 django-filter==23.2
-pydantic==2.5.0
+pydantic[email]==2.5.0
 
