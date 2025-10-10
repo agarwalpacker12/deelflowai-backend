@@ -2,12 +2,12 @@
 DeelFlowAI FastAPI Application
 """
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Union
 import os
 import sys
 import django
@@ -608,6 +608,140 @@ async def login():
         "expires_in": 3600,
         "token_type": "bearer"
     }
+
+# ===== API v1 login to match documented OpenAPI (/api/v1/auth/login) =====
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@app.post("/api/v1/auth/login")
+async def login_v1(payload: LoginRequest):
+    """Login endpoint matching OAS at http://dev.deelflowai.com:8140/docs#/ (email,password)"""
+    from app.core.security import create_access_token
+    import uuid
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc).isoformat()
+    user_id = 1
+    access_token = create_access_token(data={"sub": payload.email, "user_id": user_id})
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "email": payload.email,
+            "first_name": "string",
+            "last_name": "string",
+            "phone": "string",
+            "is_active": True,
+            "is_verified": False,
+            "id": user_id,
+            "uuid": str(uuid.uuid4()),
+            "role": "string",
+            "level": 0,
+            "points": 0,
+            "organization": {
+                "name": "string",
+                "slug": "string",
+                "subscription_status": "new",
+                "id": 1,
+                "uuid": str(uuid.uuid4()),
+                "created_at": now,
+                "updated_at": now
+            },
+            "created_at": now,
+            "updated_at": now
+        }
+    }
+
+# ===== API v1 register to match documented OpenAPI (/api/v1/auth/register) =====
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    first_name: str
+    last_name: str
+    organization_id: int
+
+@app.post("/api/v1/auth/register")
+async def register_v1(payload: RegisterRequest):
+    """Registration endpoint matching the documented response shape"""
+    import uuid
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc).isoformat()
+    user_id = 2
+
+    # NOTE: In real impl, persist user/org linkage by organization_id, hash password, etc.
+    return {
+        "email": payload.email,
+        "first_name": payload.first_name,
+        "last_name": payload.last_name,
+        "phone": "string",
+        "is_active": True,
+        "is_verified": False,
+        "id": user_id,
+        "uuid": str(uuid.uuid4()),
+        "role": "string",
+        "level": 0,
+        "points": 0,
+        "organization": {
+            "name": "string",
+            "slug": "string",
+            "subscription_status": "new",
+            "id": payload.organization_id,
+            "uuid": str(uuid.uuid4()),
+            "created_at": now,
+            "updated_at": now
+        },
+        "created_at": now,
+        "updated_at": now
+    }
+
+@app.post("/api/v1/auth/refresh")
+async def refresh_v1(refresh_token: str = Query(..., description="refresh_token")):
+    """Refresh access token; returns new access_token and user object (mock user)."""
+    from app.core.security import create_access_token
+    import uuid
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc).isoformat()
+    user_email = "user@example.com"
+    user_id = 1
+    new_access = create_access_token(data={"sub": user_email, "user_id": user_id, "rt": refresh_token})
+
+    return {
+        "access_token": new_access,
+        "token_type": "bearer",
+        "user": {
+            "email": user_email,
+            "first_name": "string",
+            "last_name": "string",
+            "phone": "string",
+            "is_active": True,
+            "is_verified": False,
+            "id": user_id,
+            "uuid": str(uuid.uuid4()),
+            "role": "string",
+            "level": 0,
+            "points": 0,
+            "organization": {
+                "name": "string",
+                "slug": "string",
+                "subscription_status": "new",
+                "id": 1,
+                "uuid": str(uuid.uuid4()),
+                "created_at": now,
+                "updated_at": now
+            },
+            "created_at": now,
+            "updated_at": now
+        }
+    }
+
+@app.post("/api/v1/auth/logout")
+async def logout_v1():
+    """Logout endpoint; returns simple string response as per doc."""
+    return "Logged out"
 
 @app.post("/test-login/")
 async def test_login(request: Request):
@@ -1256,6 +1390,7 @@ class PropertyCreate(BaseModel):
     zip: str
     county: Optional[str] = "Unknown"
     property_type: str
+    price: Optional[float] = None
     bedrooms: Optional[int] = None
     bathrooms: Optional[float] = None
     square_feet: Optional[int] = None
@@ -1394,7 +1529,10 @@ async def create_property_api(property_data: PropertyCreate):
     property_id = 2
     
     # Calculate potential profit
-    purchase_price = property_data.purchase_price or 0
+    # Accept either price or purchase_price
+    purchase_price = (
+        property_data.purchase_price if property_data.purchase_price is not None else (property_data.price or 0)
+    )
     arv = property_data.arv or 0
     repair_estimate = property_data.repair_estimate or 0
     potential_profit = arv - purchase_price - repair_estimate
@@ -1413,6 +1551,7 @@ async def create_property_api(property_data: PropertyCreate):
         "square_feet": property_data.square_feet,
         "lot_size": property_data.lot_size,
         "year_built": property_data.year_built,
+        "price": property_data.price if property_data.price is not None else purchase_price,
         "purchase_price": purchase_price,
         "arv": arv,
         "repair_estimate": repair_estimate,
@@ -1426,7 +1565,11 @@ async def create_property_api(property_data: PropertyCreate):
         "created_at": "2025-10-09T04:30:00Z",
         "updated_at": "2025-10-09T04:30:00Z"
     }
-    
+    # Store for subsequent GET by id
+    if 'updated_properties' not in globals():
+        globals()['updated_properties'] = {}
+    updated_properties[property_id] = new_property
+
     return {
         "status": "success",
         "message": "Property created successfully",
@@ -1464,6 +1607,7 @@ async def get_property(property_id: int):
             "square_feet": 1500,
             "lot_size": 0.25,
             "year_built": 2020,
+            "price": 200000.0,
             "purchase_price": 200000.0,
             "arv": 250000.0,
             "repair_estimate": 15000.0,
@@ -1478,6 +1622,12 @@ async def get_property(property_id: int):
             "updated_at": "2025-10-09T04:30:00Z"
         }
     }
+
+@app.get("/api/properties/{property_id}/")
+@app.options("/api/properties/{property_id}/")
+async def get_property_api_alias(property_id: int):
+    """API namespaced alias for get_property"""
+    return await get_property(property_id)
 
 @app.put("/properties/{property_id}/")
 @app.options("/properties/{property_id}/")
@@ -1528,10 +1678,19 @@ async def update_property(property_id: int, property_data: PropertyUpdate):
 @app.options("/properties/{property_id}/")
 async def delete_property(property_id: int):
     """Delete a property"""
+    # Remove from in-memory store if present
+    if 'updated_properties' in globals() and property_id in updated_properties:
+        del updated_properties[property_id]
     return {
         "status": "success",
         "message": "Property deleted successfully"
     }
+
+@app.delete("/api/properties/{property_id}/")
+@app.options("/api/properties/{property_id}/")
+async def api_delete_property(property_id: int):
+    """API namespaced alias for deleting a property"""
+    return await delete_property(property_id)
 
 @app.get("/properties/{property_id}/ai-analysis/")
 @app.options("/properties/{property_id}/ai-analysis/")
@@ -1566,59 +1725,60 @@ async def get_property_ai_analysis(property_id: int):
 # ==================== CAMPAIGN MANAGEMENT ENDPOINTS ====================
 
 class CampaignCreate(BaseModel):
-    """Campaign creation request model with all required fields"""
+    """Campaign creation request model - all fields required as per spec"""
     # Basic campaign information
     name: str
     campaign_type: str
-    channel: str = "email"
+    channel: str
     budget: float
     scheduled_at: str
     subject_line: str
     email_content: str
-    use_ai_personalization: bool = True
-    status: str = "draft"
-    
+    use_ai_personalization: bool
+    status: str
+
     # Geographic scope (for general campaigns)
-    geographic_scope_type: str = "zip"
-    geographic_scope_values: List[str] = []
-    
+    geographic_scope_type: str
+    # Accept either a comma-separated string or a list of strings
+    geographic_scope_values: "Union[str, List[str]]"
+
     # Basic property filters
-    location: str = "Atlanta, GA"
-    property_type: str = "Single Family"
-    minimum_equity: float = 0
-    min_price: float = 250000
-    max_price: float = 750000
-    distress_indicators: List[str] = []
-    
+    location: str
+    property_type: str
+    minimum_equity: float
+    min_price: float
+    max_price: float
+    distress_indicators: List[str]
+
     # Buyer Finder - Demographic Details
-    last_qualification: str = ""
-    age_range: str = ""
-    ethnicity: str = ""
-    salary_range: str = ""
-    marital_status: str = ""
-    employment_status: str = ""
-    home_ownership_status: str = ""
-    
+    last_qualification: str
+    age_range: str
+    ethnicity: str
+    salary_range: str
+    marital_status: str
+    employment_status: str
+    home_ownership_status: str
+
     # Buyer Finder - Geographic Details
-    buyer_country: str = ""
-    buyer_state: str = ""
-    buyer_counties: str = ""
-    buyer_city: str = ""
-    buyer_districts: str = ""
-    buyer_parish: str = ""
-    
+    buyer_country: str
+    buyer_state: str
+    buyer_counties: str
+    buyer_city: str
+    buyer_districts: str
+    buyer_parish: str
+
     # Seller Finder - Geographic Details
-    seller_country: str = ""
-    seller_state: str = ""
-    seller_counties: str = ""
-    seller_city: str = ""
-    seller_districts: str = ""
-    seller_parish: str = ""
-    
+    seller_country: str
+    seller_state: str
+    seller_counties: str
+    seller_city: str
+    seller_districts: str
+    seller_parish: str
+
     # Seller Finder - Additional Fields
-    property_year_built_min: str = ""
-    property_year_built_max: str = ""
-    seller_keywords: str = ""
+    property_year_built_min: str
+    property_year_built_max: str
+    seller_keywords: str
 
 class CampaignUpdate(BaseModel):
     """Campaign update request model - all fields optional for partial updates"""
@@ -1718,6 +1878,32 @@ async def get_campaigns():
         "page": 1,
         "limit": 20
     }
+
+# Mirror campaign routes under /api/campaigns/ to satisfy tests expecting /api prefix
+@app.get("/api/campaigns/")
+@app.options("/api/campaigns/")
+async def api_get_campaigns():
+    return await get_campaigns()
+
+@app.post("/api/campaigns/")
+@app.options("/api/campaigns/")
+async def api_create_campaign(campaign_data: CampaignCreate):
+    return await create_campaign(campaign_data)
+
+@app.get("/api/campaigns/{campaign_id}/")
+@app.options("/api/campaigns/{campaign_id}/")
+async def api_get_campaign(campaign_id: int):
+    return await get_campaign(campaign_id)
+
+@app.put("/api/campaigns/{campaign_id}/")
+@app.options("/api/campaigns/{campaign_id}/")
+async def api_update_campaign(campaign_id: int, campaign_data: CampaignUpdate):
+    return await update_campaign(campaign_id, campaign_data)
+
+@app.delete("/api/campaigns/{campaign_id}/")
+@app.options("/api/campaigns/{campaign_id}/")
+async def api_delete_campaign(campaign_id: int):
+    return await delete_campaign(campaign_id)
 
 @app.post("/campaigns/")
 @app.options("/campaigns/")
