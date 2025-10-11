@@ -19,14 +19,14 @@ api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 # Property management endpoints (commented out to use main.py endpoints)
 # api_router.include_router(properties.router, prefix="/properties", tags=["Properties"])
 
-# Lead management endpoints
-api_router.include_router(leads.router, prefix="/leads", tags=["Leads"])
+# Lead management endpoints (commented out to use main.py endpoints)
+# api_router.include_router(leads.router, prefix="/leads", tags=["Leads"])
 
-# Deal management endpoints
-api_router.include_router(deals.router, prefix="/deals", tags=["Deals"])
+# Deal management endpoints (commented out to use main.py endpoints)
+# api_router.include_router(deals.router, prefix="/deals", tags=["Deals"])
 
-# Campaign management endpoints
-api_router.include_router(campaigns.router, prefix="/campaigns", tags=["Campaigns"])
+# Campaign management endpoints (commented out to use main.py endpoints)
+# api_router.include_router(campaigns.router, prefix="/campaigns", tags=["Campaigns"])
 
 # AI services endpoints
 api_router.include_router(ai.router, prefix="/ai", tags=["AI Services"])
