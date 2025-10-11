@@ -16,7 +16,7 @@ django_project_path = Path(__file__).resolve().parent.parent
 sys.path.append(str(django_project_path))
 
 # Set Django settings
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'deelflowAI.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'deelflow.settings')
 django.setup()
 
 # Import Django models

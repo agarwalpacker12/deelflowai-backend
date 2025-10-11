@@ -14,7 +14,7 @@ django_project_root = os.path.join(os.path.dirname(__file__), '..', '..', '..', 
 sys.path.append(django_project_root)
 
 # Set up Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'deelflowAI.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'deelflow.settings')
 django.setup()
 
 from deelflow.models import Lead as DjangoLead

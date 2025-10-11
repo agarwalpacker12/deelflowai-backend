@@ -7,132 +7,125 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from decimal import Decimal
 
-class LeadResponse(BaseModel):
-    """Lead response model"""
-    name: str
+class LeadCreate(BaseModel):
+    """Lead creation request model - complete schema matching frontend DefaultValues"""
+    first_name: str
+    last_name: str
     email: str
     phone: str
-    address: str
-    city: str
-    state: str
-    zipcode: str
-    status: str
+    property_address: str
+    property_city: str
+    property_state: str
+    property_zip: str
+    property_type: str = "single_family"
+    source: str = ""
+    estimated_value: str = ""
+    mortgage_balance: str = ""
+    asking_price: str = ""
+    preferred_contact_method: str = ""
+    lead_type: str = ""
+    status: str = "new"
+
+class LeadUpdate(BaseModel):
+    """Lead update request model - all fields optional for partial updates"""
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    property_address: Optional[str] = None
+    property_city: Optional[str] = None
+    property_state: Optional[str] = None
+    property_zip: Optional[str] = None
+    property_type: Optional[str] = None
+    source: Optional[str] = None
+    estimated_value: Optional[str] = None
+    mortgage_balance: Optional[str] = None
+    asking_price: Optional[str] = None
+    preferred_contact_method: Optional[str] = None
+    lead_type: Optional[str] = None
+    status: Optional[str] = None
+
+class LeadResponse(BaseModel):
+    """Lead response model - complete schema matching frontend DefaultValues"""
+    first_name: str
+    last_name: str
+    email: str
+    phone: str
+    property_address: str
+    property_city: str
+    property_state: str
+    property_zip: str
+    property_type: str
     source: str
-    motivation_score: int
-    property_condition: str
-    financial_situation: str
-    timeline_urgency: str
-    negotiation_style: str
-    notes: str
+    estimated_value: str
+    mortgage_balance: str
+    asking_price: str
+    preferred_contact_method: str
+    lead_type: str
+    status: str
+    
+    # System Fields
     id: int
-    campaign_id: int
+    ai_score: Optional[Dict[str, Any]] = None
     created_at: str
     updated_at: str
 
 class LeadCreateRequest(BaseModel):
-    """Lead creation request model"""
-    name: str
+    """Lead creation request model - alias for LeadCreate"""
+    first_name: str
+    last_name: str
     email: str
     phone: str
-    address: str
-    city: str
-    state: str
-    zipcode: str
+    property_address: str
+    property_city: str
+    property_state: str
+    property_zip: str
+    property_type: str = "single_family"
+    source: str = ""
+    estimated_value: str = ""
+    mortgage_balance: str = ""
+    asking_price: str = ""
+    preferred_contact_method: str = ""
+    lead_type: str = ""
     status: str = "new"
-    source: str = "manual"
-    motivation_score: int = 0
-    property_condition: str
-    financial_situation: str
-    timeline_urgency: str
-    negotiation_style: str
-    notes: str
-    campaign_id: int
 
 class LeadUpdateRequest(BaseModel):
-    """Lead update request model"""
-    name: str
-    email: str
-    phone: str
-    address: str
-    city: str
-    state: str
-    zipcode: str
-    status: str
-    source: str
-    motivation_score: int
-    property_condition: str
-    financial_situation: str
-    timeline_urgency: str
-    negotiation_style: str
-    notes: str
-
-class DiscoveredLeadResponse(BaseModel):
-    """Discovered lead response model"""
-    owner_name: str
-    address: str
-    city: str
-    state: str
-    zipcode: str
-    source: str
-    details: str
-    motivation_score: int
-    property_condition: str
-    financial_situation: str
-    timeline_urgency: str
-    negotiation_style: str
-    id: int
-    created_at: str
-    updated_at: str
+    """Lead update request model - alias for LeadUpdate"""
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    property_address: Optional[str] = None
+    property_city: Optional[str] = None
+    property_state: Optional[str] = None
+    property_zip: Optional[str] = None
+    property_type: Optional[str] = None
+    source: Optional[str] = None
+    estimated_value: Optional[str] = None
+    mortgage_balance: Optional[str] = None
+    asking_price: Optional[str] = None
+    preferred_contact_method: Optional[str] = None
+    lead_type: Optional[str] = None
+    status: Optional[str] = None
 
 class LeadBase(BaseModel):
     """Base lead schema"""
-    name: str
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zipcode: Optional[str] = None
-    status: str = "new"
-    source: str = "manual"
-    motivation_score: float = 0.0
-    property_condition: Optional[str] = None
-    financial_situation: Optional[str] = None
-    timeline_urgency: Optional[str] = None
-    negotiation_style: Optional[str] = None
-    notes: Optional[str] = None
-
-class LeadCreate(LeadBase):
-    """Lead creation schema"""
-    campaign_id: Optional[int] = None
-
-class LeadUpdate(BaseModel):
-    """Lead update schema"""
-    name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zipcode: Optional[str] = None
-    status: Optional[str] = None
-    source: Optional[str] = None
-    motivation_score: Optional[float] = None
-    property_condition: Optional[str] = None
-    financial_situation: Optional[str] = None
-    timeline_urgency: Optional[str] = None
-    negotiation_style: Optional[str] = None
-    notes: Optional[str] = None
-
-class LeadResponse(LeadBase):
-    """Lead response schema"""
-    id: int
-    campaign_id: Optional[int] = None
-    created_at: datetime
-    updated_at: datetime
-    
-    class Config:
-        from_attributes = True
+    first_name: str
+    last_name: str
+    email: str
+    phone: str
+    property_address: str
+    property_city: str
+    property_state: str
+    property_zip: str
+    property_type: str
+    source: str
+    estimated_value: str
+    mortgage_balance: str
+    asking_price: str
+    preferred_contact_method: str
+    lead_type: str
+    status: str
 
 class LeadListResponse(BaseModel):
     """Lead list response schema"""
@@ -153,6 +146,24 @@ class LeadStats(BaseModel):
     average_motivation_score: float
     top_cities: List[Dict[str, Any]]
 
+class DiscoveredLeadResponse(BaseModel):
+    """Discovered lead response model"""
+    owner_name: str
+    address: str
+    city: str
+    state: str
+    zipcode: str
+    source: str
+    details: str
+    motivation_score: int
+    property_condition: str
+    financial_situation: str
+    timeline_urgency: str
+    negotiation_style: str
+    id: int
+    created_at: str
+    updated_at: str
+
 class DiscoveredLeadBase(BaseModel):
     """Base discovered lead schema"""
     owner_name: Optional[str] = None
@@ -167,12 +178,3 @@ class DiscoveredLeadBase(BaseModel):
     financial_situation: Optional[str] = None
     timeline_urgency: Optional[str] = None
     negotiation_style: Optional[str] = None
-
-class DiscoveredLeadResponse(DiscoveredLeadBase):
-    """Discovered lead response schema"""
-    id: int
-    created_at: datetime
-    updated_at: datetime
-    
-    class Config:
-        from_attributes = True
