@@ -19,8 +19,11 @@ from pathlib import Path
 from app.schemas.campaign import CampaignCreate, CampaignUpdate, CampaignResponse, CampaignListResponse
 from app.schemas.user import LoginRequest, UserResponse, UserCreateRequest, UserUpdateRequest, UsersListResponse
 from app.schemas.property import PropertyResponse, PropertyCreateRequest, PropertyUpdateRequest, PropertyCreate, PropertyUpdate
-from app.schemas.lead import LeadResponse, LeadCreateRequest, LeadUpdateRequest, DiscoveredLeadResponse
-from app.schemas.deal import DealResponse, DealCreateRequest, DealUpdateRequest
+from app.schemas.lead import LeadResponse, LeadCreateRequest, LeadUpdateRequest, DiscoveredLeadResponse, LeadCreate, LeadUpdate
+from app.schemas.deal import DealResponse, DealCreateRequest, DealUpdateRequest, DealCreate, DealUpdate
+from app.schemas.milestone import MilestoneCreate, MilestoneUpdate, MilestoneResponse, MilestoneCreateRequest, MilestoneUpdateRequest
+from app.schemas.property_save import PropertySaveCreate, PropertySaveUpdate, PropertySaveResponse, PropertySaveListResponse
+from app.schemas.payment import PaymentIntentCreate, PaymentConfirm, PaymentIntentResponse, PaymentResponse, SubscriptionResponse
 from app.schemas.auth import RegisterRequest, RegisterRequestV2
 
 # Mock data functions (replacing deleted database module)
@@ -48,7 +51,7 @@ django_project_path = Path(__file__).parent.parent
 sys.path.append(str(django_project_path))
 
 # Setup Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'deelflowAI.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'deelflow.settings')
 django.setup()
 
 from app.api.v1.api import api_router
@@ -69,6 +72,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://dev.deelflowai.com:8140",
+        "http://dev.deelflowai.com:8000",  # Keep old port for compatibility
         "http://localhost:5173",  # Vite default port
         "http://localhost:5175",
         "http://localhost:3000",
@@ -77,7 +81,7 @@ app.add_middleware(
         "http://127.0.0.1:3000"
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
 )
 
@@ -2951,6 +2955,379 @@ async def get_recent_direct():
                 }
             ]
         }
+    }
+
+# ==================== NEW API ENDPOINTS ====================
+
+# Property Save API Endpoints
+@app.get("/api/property-saves/")
+@app.options("/api/property-saves/")
+async def get_property_saves(
+    skip: int = Query(0, ge=0, description="skip"),
+    limit: int = Query(100, ge=1, le=1000, description="limit"),
+    user_id: Optional[int] = Query(None, description="user_id")
+):
+    """Get list of saved properties"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    mock_saves = [
+        {
+            "id": 1,
+            "property_id": 1,
+            "user_id": 1,
+            "notes": "Great investment opportunity",
+            "created_at": now,
+            "updated_at": now
+        }
+    ]
+    
+    return {
+        "status": "success",
+        "data": mock_saves,
+        "total": len(mock_saves),
+        "page": 1,
+        "limit": limit
+    }
+
+@app.post("/api/property-saves/")
+@app.options("/api/property-saves/")
+async def save_property(property_save_data: PropertySaveCreate):
+    """Save a property for a user"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    new_save = {
+        "id": 2,
+        "property_id": property_save_data.property_id,
+        "user_id": property_save_data.user_id or 1,
+        "notes": property_save_data.notes,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    return {
+        "status": "success",
+        "message": "Property saved successfully",
+        "data": new_save
+    }
+
+@app.delete("/api/property-saves/{save_id}/")
+@app.options("/api/property-saves/{save_id}/")
+async def unsave_property(save_id: int = PathParam(..., description="save_id")):
+    """Remove a saved property"""
+    return {
+        "status": "success",
+        "message": "Property unsaved successfully"
+    }
+
+# Payment API Endpoints
+@app.post("/api/create-payment-intent/")
+@app.options("/api/create-payment-intent/")
+async def create_payment_intent(payment_data: PaymentIntentCreate):
+    """Create a payment intent"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc)
+    
+    payment_intent = {
+        "id": "pi_1234567890",
+        "amount": float(payment_data.amount),
+        "currency": payment_data.currency,
+        "status": "requires_payment_method",
+        "client_secret": "pi_1234567890_secret_abc123",
+        "payment_method_types": payment_data.payment_method_types,
+        "metadata": payment_data.metadata or {},
+        "description": payment_data.description,
+        "created_at": now.isoformat()
+    }
+    
+    return {
+        "status": "success",
+        "data": payment_intent
+    }
+
+@app.post("/api/confirm-payment/")
+@app.options("/api/confirm-payment/")
+async def confirm_payment(payment_data: PaymentConfirm):
+    """Confirm a payment"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc)
+    
+    payment = {
+        "id": "pay_1234567890",
+        "amount": 10000,  # $100.00 in cents
+        "currency": "usd",
+        "status": "succeeded",
+        "payment_method": {
+            "type": "card",
+            "card": {
+                "brand": "visa",
+                "last4": "4242"
+            }
+        },
+        "receipt_url": "https://pay.stripe.com/receipts/abc123",
+        "created_at": now.isoformat()
+    }
+    
+    return {
+        "status": "success",
+        "data": payment
+    }
+
+@app.get("/api/current-subscription/")
+@app.options("/api/current-subscription/")
+async def get_current_subscription():
+    """Get current subscription details"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc)
+    
+    subscription = {
+        "id": "sub_1234567890",
+        "status": "active",
+        "current_period_start": now.isoformat(),
+        "current_period_end": (now.replace(month=now.month + 1)).isoformat(),
+        "plan": {
+            "id": "plan_pro",
+            "name": "Professional Plan",
+            "amount": 9900,  # $99.00 in cents
+            "currency": "usd",
+            "interval": "month"
+        },
+        "customer": {
+            "id": "cus_1234567890",
+            "email": "user@example.com"
+        },
+        "created_at": now.isoformat()
+    }
+    
+    return {
+        "status": "success",
+        "data": subscription
+    }
+
+# Deal Milestones API Endpoints
+@app.get("/api/deal-milestones/")
+@app.options("/api/deal-milestones/")
+async def get_deal_milestones(
+    skip: int = Query(0, ge=0, description="skip"),
+    limit: int = Query(100, ge=1, le=1000, description="limit"),
+    deal_id: Optional[str] = Query(None, description="deal_id")
+):
+    """Get list of deal milestones"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    mock_milestones = [
+        {
+            "id": 1,
+            "deal_id": "1",
+            "milestone_type": "contract_signed",
+            "title": "Contract Signed",
+            "description": "Purchase agreement has been signed by both parties",
+            "due_date": "2025-10-15T00:00:00Z",
+            "is_critical": True,
+            "status": "completed",
+            "created_at": now,
+            "updated_at": now
+        },
+        {
+            "id": 2,
+            "deal_id": "1",
+            "milestone_type": "inspection_completed",
+            "title": "Property Inspection",
+            "description": "Professional property inspection completed",
+            "due_date": "2025-10-20T00:00:00Z",
+            "is_critical": True,
+            "status": "pending",
+            "created_at": now,
+            "updated_at": now
+        }
+    ]
+    
+    return {
+        "status": "success",
+        "data": mock_milestones,
+        "total": len(mock_milestones),
+        "page": 1,
+        "limit": limit
+    }
+
+@app.post("/api/deal-milestones/")
+@app.options("/api/deal-milestones/")
+async def create_deal_milestone(milestone_data: MilestoneCreate):
+    """Create a new deal milestone"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    new_milestone = {
+        "id": 3,
+        "deal_id": milestone_data.deal_id,
+        "milestone_type": milestone_data.milestone_type,
+        "title": milestone_data.title,
+        "description": milestone_data.description,
+        "due_date": milestone_data.due_date,
+        "is_critical": milestone_data.is_critical,
+        "status": "pending",
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    return {
+        "status": "success",
+        "message": "Milestone created successfully",
+        "data": new_milestone
+    }
+
+@app.get("/api/deal-milestones/{milestone_id}/")
+@app.options("/api/deal-milestones/{milestone_id}/")
+async def get_deal_milestone(milestone_id: int = PathParam(..., description="milestone_id")):
+    """Get a specific deal milestone"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    milestone = {
+        "id": milestone_id,
+        "deal_id": "1",
+        "milestone_type": "contract_signed",
+        "title": "Contract Signed",
+        "description": "Purchase agreement has been signed by both parties",
+        "due_date": "2025-10-15T00:00:00Z",
+        "is_critical": True,
+        "status": "completed",
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    return {
+        "status": "success",
+        "data": milestone
+    }
+
+@app.put("/api/deal-milestones/{milestone_id}/")
+@app.options("/api/deal-milestones/{milestone_id}/")
+async def update_deal_milestone(
+    milestone_id: int = PathParam(..., description="milestone_id"),
+    milestone_data: MilestoneUpdate = None
+):
+    """Update a deal milestone"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    updated_milestone = {
+        "id": milestone_id,
+        "deal_id": milestone_data.deal_id if milestone_data and milestone_data.deal_id else "1",
+        "milestone_type": milestone_data.milestone_type if milestone_data and milestone_data.milestone_type else "contract_signed",
+        "title": milestone_data.title if milestone_data and milestone_data.title else "Contract Signed",
+        "description": milestone_data.description if milestone_data and milestone_data.description else "Purchase agreement has been signed by both parties",
+        "due_date": milestone_data.due_date if milestone_data and milestone_data.due_date else "2025-10-15T00:00:00Z",
+        "is_critical": milestone_data.is_critical if milestone_data and milestone_data.is_critical is not None else True,
+        "status": "completed",
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    return {
+        "status": "success",
+        "message": "Milestone updated successfully",
+        "data": updated_milestone
+    }
+
+@app.delete("/api/deal-milestones/{milestone_id}/")
+@app.options("/api/deal-milestones/{milestone_id}/")
+async def delete_deal_milestone(milestone_id: int = PathParam(..., description="milestone_id")):
+    """Delete a deal milestone"""
+    return {
+        "status": "success",
+        "message": "Milestone deleted successfully"
+    }
+
+@app.patch("/api/deal-milestones/{milestone_id}/complete/")
+@app.options("/api/deal-milestones/{milestone_id}/complete/")
+async def complete_deal_milestone(milestone_id: int = PathParam(..., description="milestone_id")):
+    """Mark a deal milestone as completed"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        "status": "success",
+        "message": "Milestone completed successfully",
+        "data": {
+            "id": milestone_id,
+            "status": "completed",
+            "completed_at": now
+        }
+    }
+
+# AI Analysis Endpoints
+@app.get("/api/properties/{property_id}/ai-analysis/")
+@app.options("/api/properties/{property_id}/ai-analysis/")
+async def get_property_ai_analysis(property_id: int = PathParam(..., description="property_id")):
+    """Get AI analysis for a property"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    analysis = {
+        "property_id": property_id,
+        "ai_confidence": 0.85,
+        "distress_level": 0.3,
+        "motivation": "high",
+        "timeline": "30-60 days",
+        "roi_percent": 15.5,
+        "cap_rate": 8.2,
+        "cash_flow": 1200.0,
+        "market_stability_score": 0.78,
+        "comparables_confidence": 0.82,
+        "analysis_date": now,
+        "recommendations": [
+            "Property shows strong investment potential",
+            "Consider negotiating price down by 5-10%",
+            "Market conditions are favorable for quick sale"
+        ]
+    }
+    
+    return {
+        "status": "success",
+        "data": analysis
+    }
+
+@app.get("/api/leads/{lead_id}/ai-score/")
+@app.options("/api/leads/{lead_id}/ai-score/")
+async def get_lead_ai_score(lead_id: int = PathParam(..., description="lead_id")):
+    """Get AI score for a lead"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    score = {
+        "lead_id": lead_id,
+        "ai_score": 87,
+        "motivation_score": 92,
+        "urgency_score": 78,
+        "financial_score": 85,
+        "timeline_score": 90,
+        "overall_confidence": 0.87,
+        "recommendations": [
+            "High priority lead - contact within 24 hours",
+            "Strong financial position - likely to close quickly",
+            "Consider offering premium service package"
+        ],
+        "analysis_date": now
+    }
+    
+    return {
+        "status": "success",
+        "data": score
     }
 
 @app.options("/{path:path}")

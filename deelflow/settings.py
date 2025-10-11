@@ -14,6 +14,21 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 from re import template
+# try:
+#     from dotenv import load_dotenv
+#     # Load environment variables from .env file
+#     load_dotenv()
+# except ImportError:
+#     # dotenv not available, continue without it
+#     pass
+
+# Set environment variables directly for now
+import os
+os.environ.setdefault('STRIPE_PUBLISHABLE_KEY', 'pk_test_your_key_here')
+os.environ.setdefault('STRIPE_SECRET_KEY', 'sk_test_your_key_here')
+os.environ.setdefault('STRIPE_WEBHOOK_SECRET', 'whsec_your_webhook_secret')
+os.environ.setdefault('FRONTEND_URL', 'http://localhost:3000')
+os.environ.setdefault('BACKEND_URL', 'http://localhost:8000')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -58,7 +73,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'deelflowAI.urls'
+ROOT_URLCONF = 'deelflow.project_urls'
 
 TEMPLATES = [
     {
@@ -76,7 +91,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'deelflowAI.wsgi.application'
+WSGI_APPLICATION = 'deelflow.wsgi.application'
 
 
 # Database
@@ -147,5 +162,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Stripe Configuration (Payment Settings)
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', 'pk_test_your_key_here')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', 'sk_test_your_key_here')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', 'whsec_your_webhook_secret_here')
+
+# Frontend and API URL Configuration
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+BACKEND_URL = os.environ.get('BACKEND_URL', 'http://localhost:8000')
 
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"

@@ -76,4 +76,11 @@ urlpatterns = [
     path('edit_role/', views.edit_role, name='edit_role'),
     path('get_all_users/', views.get_all_users, name='get_all_users'),
     path('create_campaign/', views.create_campaign, name='create_campaign'),
+    
+    # Stripe Payment URLs
+    path('api/subscription-packages/', views.get_subscription_packages, name='subscription-packages'),
+    path('api/create-checkout-session/', views.create_checkout_session, name='create-checkout-session'),
+    path('api/stripe-webhook/', views.stripe_webhook, name='stripe-webhook'),
+    path('api/user-subscription/', views.get_user_subscription, name='user-subscription'),
+    path('api/config/', views.get_config, name='config'),
 ]

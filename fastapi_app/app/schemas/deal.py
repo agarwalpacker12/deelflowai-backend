@@ -7,86 +7,131 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from decimal import Decimal
 
-class DealResponse(BaseModel):
-    """Deal response model"""
-    property_id: int
-    buyer_lead_id: int
-    seller_lead_id: int
+class DealCreate(BaseModel):
+    """Deal creation request model - complete schema matching frontend DefaultValues"""
+    property_id: str
+    lead_id: str
     deal_type: str
-    status: str
-    offer_price: str
-    final_price: str
-    commission: str
+    buyer_id: str
+    seller_id: str
+    inspection_period: str
+    purchase_price: str
+    sale_price: str
+    assignment_fee: str
+    earnest_money: str
+    contract_date: str
     closing_date: str
+    financing_contingency: bool = False
+    inspection_contingency: bool = False
+    appraisal_contingency: bool = False
+    title_contingency: bool = False
+    notes: str = ""
+
+class DealUpdate(BaseModel):
+    """Deal update request model - all fields optional for partial updates"""
+    property_id: Optional[str] = None
+    lead_id: Optional[str] = None
+    deal_type: Optional[str] = None
+    buyer_id: Optional[str] = None
+    seller_id: Optional[str] = None
+    inspection_period: Optional[str] = None
+    purchase_price: Optional[str] = None
+    sale_price: Optional[str] = None
+    assignment_fee: Optional[str] = None
+    earnest_money: Optional[str] = None
+    contract_date: Optional[str] = None
+    closing_date: Optional[str] = None
+    financing_contingency: Optional[bool] = None
+    inspection_contingency: Optional[bool] = None
+    appraisal_contingency: Optional[bool] = None
+    title_contingency: Optional[bool] = None
+    notes: Optional[str] = None
+
+class DealResponse(BaseModel):
+    """Deal response model - complete schema matching frontend DefaultValues"""
+    property_id: str
+    lead_id: str
+    deal_type: str
+    buyer_id: str
+    seller_id: str
+    inspection_period: str
+    purchase_price: str
+    sale_price: str
+    assignment_fee: str
+    earnest_money: str
+    contract_date: str
+    closing_date: str
+    financing_contingency: bool
+    inspection_contingency: bool
+    appraisal_contingency: bool
+    title_contingency: bool
     notes: str
+    
+    # System Fields
     id: int
+    status: str
     created_at: str
     updated_at: str
 
 class DealCreateRequest(BaseModel):
-    """Deal creation request model"""
-    property_id: int
-    buyer_lead_id: int
-    seller_lead_id: int
+    """Deal creation request model - alias for DealCreate"""
+    property_id: str
+    lead_id: str
     deal_type: str
-    status: str = "pending"
-    offer_price: int
-    final_price: int
-    commission: int
+    buyer_id: str
+    seller_id: str
+    inspection_period: str
+    purchase_price: str
+    sale_price: str
+    assignment_fee: str
+    earnest_money: str
+    contract_date: str
     closing_date: str
-    notes: str
+    financing_contingency: bool = False
+    inspection_contingency: bool = False
+    appraisal_contingency: bool = False
+    title_contingency: bool = False
+    notes: str = ""
 
 class DealUpdateRequest(BaseModel):
-    """Deal update request model"""
-    property_id: int
-    buyer_lead_id: int
-    seller_lead_id: int
-    deal_type: str
-    status: str
-    offer_price: int
-    final_price: int
-    commission: int
-    closing_date: str
-    notes: str
+    """Deal update request model - alias for DealUpdate"""
+    property_id: Optional[str] = None
+    lead_id: Optional[str] = None
+    deal_type: Optional[str] = None
+    buyer_id: Optional[str] = None
+    seller_id: Optional[str] = None
+    inspection_period: Optional[str] = None
+    purchase_price: Optional[str] = None
+    sale_price: Optional[str] = None
+    assignment_fee: Optional[str] = None
+    earnest_money: Optional[str] = None
+    contract_date: Optional[str] = None
+    closing_date: Optional[str] = None
+    financing_contingency: Optional[bool] = None
+    inspection_contingency: Optional[bool] = None
+    appraisal_contingency: Optional[bool] = None
+    title_contingency: Optional[bool] = None
+    notes: Optional[str] = None
 
 class DealBase(BaseModel):
     """Base deal schema"""
-    property_id: int
-    buyer_lead_id: int
-    seller_lead_id: int
+    property_id: str
+    lead_id: str
     deal_type: str
-    status: str = "pending"
-    offer_price: Decimal
-    final_price: Optional[Decimal] = None
-    commission: Optional[Decimal] = None
-    closing_date: Optional[datetime] = None
-    notes: Optional[str] = None
-
-class DealCreate(DealBase):
-    """Deal creation schema"""
-    pass
-
-class DealUpdate(BaseModel):
-    """Deal update schema"""
-    property_id: Optional[int] = None
-    buyer_lead_id: Optional[int] = None
-    seller_lead_id: Optional[int] = None
-    deal_type: Optional[str] = None
-    status: Optional[str] = None
-    offer_price: Optional[Decimal] = None
-    final_price: Optional[Decimal] = None
-    commission: Optional[Decimal] = None
-    closing_date: Optional[datetime] = None
-    notes: Optional[str] = None
-
-class DealResponse(DealBase):
-    """Deal response schema"""
-    id: int
-    created_at: datetime
-    updated_at: datetime
-    
-    class Config:
-        from_attributes = True
+    buyer_id: str
+    seller_id: str
+    inspection_period: str
+    purchase_price: str
+    sale_price: str
+    assignment_fee: str
+    earnest_money: str
+    contract_date: str
+    closing_date: str
+    financing_contingency: bool
+    inspection_contingency: bool
+    appraisal_contingency: bool
+    title_contingency: bool
+    notes: str
 
 class DealListResponse(BaseModel):
     """Deal list response schema"""
