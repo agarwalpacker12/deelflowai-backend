@@ -13,11 +13,11 @@ api_router = APIRouter()
 # Authentication endpoints
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 
-# User management endpoints
-api_router.include_router(users.router, prefix="/users", tags=["Users"])
+# User management endpoints (commented out to use main.py endpoints)
+# api_router.include_router(users.router, prefix="/users", tags=["Users"])
 
-# Property management endpoints
-api_router.include_router(properties.router, prefix="/properties", tags=["Properties"])
+# Property management endpoints (commented out to use main.py endpoints)
+# api_router.include_router(properties.router, prefix="/properties", tags=["Properties"])
 
 # Lead management endpoints
 api_router.include_router(leads.router, prefix="/leads", tags=["Leads"])

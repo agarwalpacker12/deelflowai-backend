@@ -3,6 +3,7 @@ DeelFlowAI FastAPI Application
 """
 
 from fastapi import FastAPI, HTTPException, Request, Query
+from fastapi.params import Path as PathParam
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
@@ -614,6 +615,108 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+# User API Models
+class UserResponse(BaseModel):
+    """User response model"""
+    email: str
+    first_name: str
+    last_name: str
+    phone: str
+    is_active: bool
+    is_verified: bool
+    id: int
+    uuid: str
+    role: str
+    level: int
+    points: int
+    organization: dict
+    created_at: str
+    updated_at: str
+
+class UserCreateRequest(BaseModel):
+    """User creation request model"""
+    email: str
+    first_name: str
+    last_name: str
+    phone: str
+    is_active: bool = True
+    is_verified: bool = False
+    password: str
+    organization_id: int
+    role: str = "user"
+
+class UserUpdateRequest(BaseModel):
+    """User update request model"""
+    first_name: str
+    last_name: str
+    phone: str
+    is_active: bool
+    is_verified: bool
+    role: str
+
+class UsersListResponse(BaseModel):
+    """Users list response model"""
+    users: List[UserResponse]
+    total: int
+    page: int
+    limit: int
+    has_next: bool
+    has_prev: bool
+
+# Property API Models
+class PropertyResponse(BaseModel):
+    """Property response model"""
+    address: str
+    city: str
+    state: str
+    zipcode: str
+    property_type: str
+    price: str
+    bedrooms: int
+    bathrooms: int
+    square_feet: int
+    lot_size: int
+    year_built: int
+    description: str
+    images: List[str]
+    id: int
+    status: str
+    ai_analysis: dict
+    created_at: str
+    updated_at: str
+
+class PropertyCreateRequest(BaseModel):
+    """Property creation request model"""
+    address: str
+    city: str
+    state: str
+    zipcode: str
+    property_type: str
+    price: int
+    bedrooms: int
+    bathrooms: int
+    square_feet: int
+    lot_size: int
+    year_built: int
+    description: str
+    images: List[str] = []
+
+class PropertyUpdateRequest(BaseModel):
+    """Property update request model"""
+    address: str
+    city: str
+    state: str
+    zipcode: str
+    property_type: str
+    price: int
+    bedrooms: int
+    bathrooms: int
+    square_feet: int
+    lot_size: int
+    year_built: int
+    description: str
+    images: List[str]
+
 @app.post("/api/v1/auth/login")
 async def login_v1(payload: LoginRequest):
     """Login endpoint matching OAS at http://dev.deelflowai.com:8140/docs#/ (email,password)"""
@@ -742,6 +845,393 @@ async def refresh_v1(refresh_token: str = Query(..., description="refresh_token"
 async def logout_v1():
     """Logout endpoint; returns simple string response as per doc."""
     return "Logged out"
+
+# User API Endpoints
+@app.get("/api/v1/users/")
+async def get_users(
+    skip: int = Query(0, ge=0, description="skip"),
+    limit: int = Query(100, ge=1, le=1000, description="limit"),
+    search: Optional[str] = Query(None, description="search"),
+    role: Optional[str] = Query(None, description="role"),
+    organization_id: Optional[int] = Query(None, description="organization_id")
+):
+    """Get list of users with filtering and pagination"""
+    import uuid
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Mock user data
+    mock_users = [
+        {
+            "email": "user@example.com",
+            "first_name": "string",
+            "last_name": "string",
+            "phone": "string",
+            "is_active": True,
+            "is_verified": False,
+            "id": 1,
+            "uuid": str(uuid.uuid4()),
+            "role": "string",
+            "level": 0,
+            "points": 0,
+            "organization": {
+                "name": "string",
+                "slug": "string",
+                "subscription_status": "new",
+                "id": 1,
+                "uuid": str(uuid.uuid4()),
+                "created_at": now,
+                "updated_at": now
+            },
+            "created_at": now,
+            "updated_at": now
+        }
+    ]
+    
+    # Apply filters (mock implementation)
+    filtered_users = mock_users
+    if search:
+        filtered_users = [u for u in filtered_users if search.lower() in u["email"].lower()]
+    if role:
+        filtered_users = [u for u in filtered_users if u["role"] == role]
+    if organization_id:
+        filtered_users = [u for u in filtered_users if u["organization"]["id"] == organization_id]
+    
+    # Apply pagination
+    total = len(filtered_users)
+    start = skip
+    end = skip + limit
+    paginated_users = filtered_users[start:end]
+    
+    return {
+        "users": paginated_users,
+        "total": total,
+        "page": skip // limit,
+        "limit": limit,
+        "has_next": end < total,
+        "has_prev": skip > 0
+    }
+
+@app.post("/api/v1/users/")
+async def create_user(
+    user_data: UserCreateRequest,
+    func: str = Query(..., description="func")
+):
+    """Create a new user"""
+    import uuid
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        "email": user_data.email,
+        "first_name": user_data.first_name,
+        "last_name": user_data.last_name,
+        "phone": user_data.phone,
+        "is_active": user_data.is_active,
+        "is_verified": user_data.is_verified,
+        "id": 1,  # Mock ID
+        "uuid": str(uuid.uuid4()),
+        "role": user_data.role,
+        "level": 0,
+        "points": 0,
+        "organization": {
+            "name": "string",
+            "slug": "string",
+            "subscription_status": "new",
+            "id": user_data.organization_id,
+            "uuid": str(uuid.uuid4()),
+            "created_at": now,
+            "updated_at": now
+        },
+        "created_at": now,
+        "updated_at": now
+    }
+
+@app.get("/api/v1/users/{user_id}")
+async def get_user(user_id: int = PathParam(..., description="user_id")):
+    """Get specific user by ID"""
+    import uuid
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        "email": "user@example.com",
+        "first_name": "string",
+        "last_name": "string",
+        "phone": "string",
+        "is_active": True,
+        "is_verified": False,
+        "id": user_id,
+        "uuid": str(uuid.uuid4()),
+        "role": "string",
+        "level": 0,
+        "points": 0,
+        "organization": {
+            "name": "string",
+            "slug": "string",
+            "subscription_status": "new",
+            "id": 1,
+            "uuid": str(uuid.uuid4()),
+            "created_at": now,
+            "updated_at": now
+        },
+        "created_at": now,
+        "updated_at": now
+    }
+
+@app.put("/api/v1/users/{user_id}")
+async def update_user(
+    user_id: int = PathParam(..., description="user_id"),
+    user_data: UserUpdateRequest = None,
+    func: str = Query(..., description="func")
+):
+    """Update an existing user"""
+    import uuid
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        "email": "user@example.com",
+        "first_name": user_data.first_name if user_data else "string",
+        "last_name": user_data.last_name if user_data else "string",
+        "phone": user_data.phone if user_data else "string",
+        "is_active": user_data.is_active if user_data else True,
+        "is_verified": user_data.is_verified if user_data else False,
+        "id": user_id,
+        "uuid": str(uuid.uuid4()),
+        "role": user_data.role if user_data else "string",
+        "level": 0,
+        "points": 0,
+        "organization": {
+            "name": "string",
+            "slug": "string",
+            "subscription_status": "new",
+            "id": 1,
+            "uuid": str(uuid.uuid4()),
+            "created_at": now,
+            "updated_at": now
+        },
+        "created_at": now,
+        "updated_at": now
+    }
+
+@app.delete("/api/v1/users/{user_id}")
+async def delete_user(
+    user_id: int = PathParam(..., description="user_id"),
+    func: str = Query(..., description="func")
+):
+    """Delete a user"""
+    return "User deleted successfully"
+
+@app.get("/api/v1/users/{user_id}/roles")
+async def get_user_roles(user_id: int = PathParam(..., description="user_id")):
+    """Get roles for a specific user"""
+    # Mock roles data
+    return ["admin", "user", "manager"]
+
+@app.post("/api/v1/users/{user_id}/assign-role")
+async def assign_role(
+    user_id: int = PathParam(..., description="user_id"),
+    role_id: int = Query(..., description="role_id"),
+    func: str = Query(..., description="func")
+):
+    """Assign a role to a user"""
+    return "Role assigned successfully"
+
+@app.delete("/api/v1/users/{user_id}/remove-role")
+async def remove_role(
+    user_id: int = PathParam(..., description="user_id"),
+    role_id: int = Query(..., description="role_id"),
+    func: str = Query(..., description="func")
+):
+    """Remove a role from a user"""
+    return "Role removed successfully"
+
+# Property API Endpoints
+@app.get("/api/v1/properties/")
+async def get_properties(
+    skip: int = Query(0, ge=0, description="skip"),
+    limit: int = Query(100, ge=1, le=1000, description="limit"),
+    search: Optional[str] = Query(None, description="search"),
+    property_type: Optional[str] = Query(None, description="property_type"),
+    min_price: Optional[int] = Query(None, description="min_price"),
+    max_price: Optional[int] = Query(None, description="max_price")
+):
+    """Get list of properties with filtering and pagination"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Mock property data
+    mock_properties = [
+        {
+            "address": "123 Main St",
+            "city": "New York",
+            "state": "NY",
+            "zipcode": "10001",
+            "property_type": "apartment",
+            "price": "500000",
+            "bedrooms": 2,
+            "bathrooms": 2,
+            "square_feet": 1200,
+            "lot_size": 0,
+            "year_built": 2020,
+            "description": "Beautiful modern apartment in downtown",
+            "images": ["image1.jpg", "image2.jpg"],
+            "id": 1,
+            "status": "available",
+            "ai_analysis": {"score": 85, "recommendation": "good_investment"},
+            "created_at": now,
+            "updated_at": now
+        },
+        {
+            "address": "456 Oak Ave",
+            "city": "Los Angeles",
+            "state": "CA",
+            "zipcode": "90210",
+            "property_type": "house",
+            "price": "750000",
+            "bedrooms": 3,
+            "bathrooms": 2,
+            "square_feet": 1800,
+            "lot_size": 5000,
+            "year_built": 2018,
+            "description": "Spacious family home with garden",
+            "images": ["image3.jpg"],
+            "id": 2,
+            "status": "pending",
+            "ai_analysis": {"score": 92, "recommendation": "excellent_investment"},
+            "created_at": now,
+            "updated_at": now
+        }
+    ]
+    
+    # Apply filters (mock implementation)
+    filtered_properties = mock_properties
+    if search:
+        filtered_properties = [p for p in filtered_properties if search.lower() in p["address"].lower() or search.lower() in p["city"].lower()]
+    if property_type:
+        filtered_properties = [p for p in filtered_properties if p["property_type"] == property_type]
+    if min_price:
+        filtered_properties = [p for p in filtered_properties if int(p["price"]) >= min_price]
+    if max_price:
+        filtered_properties = [p for p in filtered_properties if int(p["price"]) <= max_price]
+    
+    # Apply pagination
+    start = skip
+    end = skip + limit
+    paginated_properties = filtered_properties[start:end]
+    
+    return paginated_properties
+
+@app.post("/api/v1/properties/")
+async def create_property(
+    property_data: PropertyCreateRequest,
+    func: str = Query(..., description="func")
+):
+    """Create a new property"""
+    from datetime import datetime, timezone
+    import uuid
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        "address": property_data.address,
+        "city": property_data.city,
+        "state": property_data.state,
+        "zipcode": property_data.zipcode,
+        "property_type": property_data.property_type,
+        "price": str(property_data.price),
+        "bedrooms": property_data.bedrooms,
+        "bathrooms": property_data.bathrooms,
+        "square_feet": property_data.square_feet,
+        "lot_size": property_data.lot_size,
+        "year_built": property_data.year_built,
+        "description": property_data.description,
+        "images": property_data.images,
+        "id": 1,  # Mock ID
+        "status": "available",
+        "ai_analysis": {"score": 80, "recommendation": "good_potential"},
+        "created_at": now,
+        "updated_at": now
+    }
+
+@app.get("/api/v1/properties/{property_id}")
+async def get_property(property_id: int = PathParam(..., description="property_id")):
+    """Get property by ID"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        "address": "123 Main St",
+        "city": "New York",
+        "state": "NY",
+        "zipcode": "10001",
+        "property_type": "apartment",
+        "price": "500000",
+        "bedrooms": 2,
+        "bathrooms": 2,
+        "square_feet": 1200,
+        "lot_size": 0,
+        "year_built": 2020,
+        "description": "Beautiful modern apartment in downtown",
+        "images": ["image1.jpg", "image2.jpg"],
+        "id": property_id,
+        "status": "available",
+        "ai_analysis": {"score": 85, "recommendation": "good_investment"},
+        "created_at": now,
+        "updated_at": now
+    }
+
+@app.put("/api/v1/properties/{property_id}")
+async def update_property(
+    property_id: int = PathParam(..., description="property_id"),
+    property_data: PropertyUpdateRequest = None,
+    func: str = Query(..., description="func")
+):
+    """Update property information"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        "address": property_data.address if property_data else "123 Main St",
+        "city": property_data.city if property_data else "New York",
+        "state": property_data.state if property_data else "NY",
+        "zipcode": property_data.zipcode if property_data else "10001",
+        "property_type": property_data.property_type if property_data else "apartment",
+        "price": str(property_data.price) if property_data else "500000",
+        "bedrooms": property_data.bedrooms if property_data else 2,
+        "bathrooms": property_data.bathrooms if property_data else 2,
+        "square_feet": property_data.square_feet if property_data else 1200,
+        "lot_size": property_data.lot_size if property_data else 0,
+        "year_built": property_data.year_built if property_data else 2020,
+        "description": property_data.description if property_data else "Beautiful modern apartment in downtown",
+        "images": property_data.images if property_data else ["image1.jpg", "image2.jpg"],
+        "id": property_id,
+        "status": "available",
+        "ai_analysis": {"score": 85, "recommendation": "good_investment"},
+        "created_at": now,
+        "updated_at": now
+    }
+
+@app.delete("/api/v1/properties/{property_id}")
+async def delete_property(
+    property_id: int = PathParam(..., description="property_id"),
+    func: str = Query(..., description="func")
+):
+    """Delete property"""
+    return "Property deleted successfully"
+
+@app.get("/api/v1/properties/{property_id}/ai-analysis")
+async def get_property_ai_analysis(property_id: int = PathParam(..., description="property_id")):
+    """Get AI analysis for a property"""
+    return "AI analysis completed: This property shows strong investment potential with 85% confidence score and positive market trends."
 
 @app.post("/test-login/")
 async def test_login(request: Request):
@@ -1729,7 +2219,7 @@ class CampaignCreate(BaseModel):
     # Basic campaign information
     name: str
     campaign_type: str
-    channel: str
+    channel: List[str]
     budget: float
     scheduled_at: str
     subject_line: str
@@ -1833,7 +2323,7 @@ async def get_campaigns():
                 "id": 1,
                 "name": "Q4 Property Marketing Campaign",
                 "campaign_type": "new",
-                "channel": "email",
+                "channel": ["email"],
                 "budget": 5000.0,
                 "scheduled_at": "2025-10-15T09:00:00Z",
                 "subject_line": "Exclusive Property Investment Opportunities",
@@ -1935,7 +2425,7 @@ async def get_campaign(campaign_id: int):
             "id": campaign_id,
             "name": "Sample Campaign",
             "campaign_type": "new",
-            "channel": "email",
+            "channel": ["email"],
             "budget": 5000.0,
             "scheduled_at": "2025-10-15T09:00:00Z",
             "subject_line": "Exclusive Property Investment Opportunities",
