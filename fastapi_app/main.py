@@ -14,6 +14,7 @@ import sys
 import django
 import datetime
 from pathlib import Path
+from asgiref.sync import sync_to_async
 
 # Import schemas from their respective files
 from app.schemas.campaign import CampaignCreate, CampaignUpdate, CampaignResponse, CampaignListResponse
@@ -62,7 +63,7 @@ app = FastAPI(
     title="DeelFlowAI Backend API",
     version="1.0.0",
     description="Comprehensive real estate AI platform backend API",
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    openapi_url="/openapi.json",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -96,8 +97,8 @@ app.add_middleware(
     ]
 )
 
-# Include API router
-app.include_router(api_router, prefix=settings.API_V1_STR)
+# Include API router (commented out - using direct endpoints in main.py)
+# app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 async def root():
@@ -631,126 +632,24 @@ async def login():
 
 # Deal API Models - now imported from app.schemas.deal
 
-@app.post("/api/v1/auth/login")
-async def login_v1(payload: LoginRequest):
-    """Login endpoint matching OAS at http://dev.deelflowai.com:8140/docs#/ (email,password)"""
-    from app.core.security import create_access_token
-    import uuid
-    from datetime import datetime, timezone
+# ==================== AUTHENTICATION ENDPOINTS ====================
 
-    now = datetime.now(timezone.utc).isoformat()
-    user_id = 1
-    access_token = create_access_token(data={"sub": payload.email, "user_id": user_id})
-
+@app.get("/recent/")
+@app.options("/recent/")
+async def get_recent_direct():
+    """Get recent market alerts - direct endpoint"""
     return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "email": payload.email,
-            "first_name": "string",
-            "last_name": "string",
-            "phone": "string",
-            "is_active": True,
-            "is_verified": False,
-            "id": user_id,
-            "uuid": str(uuid.uuid4()),
-            "role": "string",
-            "level": 0,
-            "points": 0,
-            "organization": {
-                "name": "string",
-                "slug": "string",
-                "subscription_status": "new",
-                "id": 1,
-                "uuid": str(uuid.uuid4()),
-                "created_at": now,
-                "updated_at": now
-            },
-            "created_at": now,
-            "updated_at": now
+        "status": "success",
+        "data": {
+            "alerts": [
+                {"type": "opportunity", "message": "New distressed property in Miami", "priority": "high"},
+                {"type": "market", "message": "Price increase in downtown area", "priority": "medium"},
+                {"type": "lead", "message": "High-value lead identified", "priority": "high"}
+            ]
         }
     }
 
-# ===== API v1 register to match documented OpenAPI (/api/v1/auth/register) =====
-# RegisterRequest - now imported from app.schemas.auth
-
-@app.post("/api/v1/auth/register")
-async def register_v1(payload: RegisterRequest):
-    """Registration endpoint matching the documented response shape"""
-    import uuid
-    from datetime import datetime, timezone
-
-    now = datetime.now(timezone.utc).isoformat()
-    user_id = 2
-
-    # NOTE: In real impl, persist user/org linkage by organization_id, hash password, etc.
-    return {
-        "email": payload.email,
-        "first_name": payload.first_name,
-        "last_name": payload.last_name,
-        "phone": "string",
-        "is_active": True,
-        "is_verified": False,
-        "id": user_id,
-        "uuid": str(uuid.uuid4()),
-        "role": "string",
-        "level": 0,
-        "points": 0,
-        "organization": {
-            "name": "string",
-            "slug": "string",
-            "subscription_status": "new",
-            "id": payload.organization_id,
-            "uuid": str(uuid.uuid4()),
-            "created_at": now,
-            "updated_at": now
-        },
-        "created_at": now,
-        "updated_at": now
-    }
-
-@app.post("/api/v1/auth/refresh")
-async def refresh_v1(refresh_token: str = Query(..., description="refresh_token")):
-    """Refresh access token; returns new access_token and user object (mock user)."""
-    from app.core.security import create_access_token
-    import uuid
-    from datetime import datetime, timezone
-
-    now = datetime.now(timezone.utc).isoformat()
-    user_email = "user@example.com"
-    user_id = 1
-    new_access = create_access_token(data={"sub": user_email, "user_id": user_id, "rt": refresh_token})
-
-    return {
-        "access_token": new_access,
-        "token_type": "bearer",
-        "user": {
-            "email": user_email,
-            "first_name": "string",
-            "last_name": "string",
-            "phone": "string",
-            "is_active": True,
-            "is_verified": False,
-            "id": user_id,
-            "uuid": str(uuid.uuid4()),
-            "role": "string",
-            "level": 0,
-            "points": 0,
-            "organization": {
-                "name": "string",
-                "slug": "string",
-                "subscription_status": "new",
-                "id": 1,
-                "uuid": str(uuid.uuid4()),
-                "created_at": now,
-                "updated_at": now
-            },
-            "created_at": now,
-            "updated_at": now
-        }
-    }
-
-@app.post("/api/v1/auth/logout")
+@app.get("/compliance-status/details/")
 async def logout_v1():
     """Logout endpoint; returns simple string response as per doc."""
     return "Logged out"
@@ -2560,59 +2459,52 @@ async def get_property_ai_analysis(property_id: int):
 @app.get("/campaigns/")
 @app.options("/campaigns/")
 async def get_campaigns():
-    """Get all campaigns"""
-    return {
-        "status": "success",
-        "data": [
-            {
-                "id": 1,
-                "name": "Q4 Property Marketing Campaign",
-                "campaign_type": "new",
-                "channel": ["email"],
-                "budget": 5000.0,
-                "scheduled_at": "2025-10-15T09:00:00Z",
-                "subject_line": "Exclusive Property Investment Opportunities",
-                "email_content": "Discover amazing real estate investment opportunities...",
-                "use_ai_personalization": True,
-                "status": "active",
-                "geographic_scope_type": "zip",
-                "geographic_scope_values": ["30309", "30310", "30311"],
-                "location": "Atlanta, GA",
-                "property_type": "Single Family",
-                "minimum_equity": 50000,
-                "min_price": 200000,
-                "max_price": 500000,
-                "distress_indicators": ["foreclosure", "short_sale"],
-                "last_qualification": "2025-10-01",
-                "age_range": "25-55",
-                "ethnicity": "all",
-                "salary_range": "50000-150000",
-                "marital_status": "all",
-                "employment_status": "employed",
-                "home_ownership_status": "renting",
-                "buyer_country": "USA",
-                "buyer_state": "GA",
-                "buyer_counties": "Fulton, DeKalb",
-                "buyer_city": "Atlanta",
-                "buyer_districts": "Downtown, Midtown",
-                "buyer_parish": "",
-                "seller_country": "USA",
-                "seller_state": "GA",
-                "seller_counties": "Fulton, DeKalb",
-                "seller_city": "Atlanta",
-                "seller_districts": "Downtown, Midtown",
-                "seller_parish": "",
-                "property_year_built_min": "1990",
-                "property_year_built_max": "2020",
-                "seller_keywords": "motivated, quick sale, investment",
-                "created_at": "2025-10-09T04:30:00Z",
-                "updated_at": "2025-10-09T04:30:00Z"
-            }
-        ],
-        "total": 1,
-        "page": 1,
-        "limit": 20
-    }
+    """Get all campaigns from Django database"""
+    try:
+        from deelflow.models import Campaign
+        campaigns = await sync_to_async(list)(Campaign.objects.all())
+        
+        campaign_data = []
+        for campaign in campaigns:
+            campaign_data.append({
+                "id": campaign.id,
+                "name": campaign.name,
+                "campaign_type": campaign.campaign_type,
+                "channel": campaign.channel if isinstance(campaign.channel, list) else [campaign.channel],
+                "budget": float(campaign.budget) if campaign.budget else None,
+                "scheduled_at": campaign.scheduled_at.isoformat() if campaign.scheduled_at else None,
+                "subject_line": campaign.subject_line,
+                "email_content": campaign.email_content,
+                "use_ai_personalization": campaign.use_ai_personalization,
+                "status": campaign.status,
+                "geographic_scope_type": campaign.geographic_scope_type,
+                "geographic_scope_values": campaign.geographic_scope_values if isinstance(campaign.geographic_scope_values, list) else [],
+                "location": campaign.location,
+                "property_type": campaign.property_type,
+                "minimum_equity": float(campaign.minimum_equity) if campaign.minimum_equity else None,
+                "min_price": float(campaign.min_price) if campaign.min_price else None,
+                "max_price": float(campaign.max_price) if campaign.max_price else None,
+                "distress_indicators": campaign.distress_indicators if isinstance(campaign.distress_indicators, list) else [],
+                "created_at": campaign.created_at.isoformat(),
+                "updated_at": campaign.created_at.isoformat()
+            })
+        
+        return {
+            "status": "success",
+            "data": campaign_data,
+            "total": len(campaign_data),
+            "page": 1,
+            "limit": 20
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to retrieve campaigns: {str(e)}",
+            "data": [],
+            "total": 0,
+            "page": 1,
+            "limit": 20
+        }
 
 # Mirror campaign routes under /api/campaigns/ to satisfy tests expecting /api prefix
 @app.get("/api/campaigns/")
@@ -2643,52 +2535,105 @@ async def api_delete_campaign(campaign_id: int):
 @app.post("/campaigns/")
 @app.options("/campaigns/")
 async def create_campaign(campaign_data: CampaignCreate):
-    """Create a new campaign"""
-    # Generate a new campaign ID
-    campaign_id = 2
-    
-    new_campaign = {
-        "id": campaign_id,
-        **campaign_data.dict(),
-        "created_at": "2025-10-09T04:30:00Z",
-        "updated_at": "2025-10-09T04:30:00Z"
-    }
-    
-    return {
-        "status": "success",
-        "message": "Campaign created successfully",
-        "data": new_campaign
-    }
+    """Create a new campaign in Django database"""
+    try:
+        from deelflow.models import Campaign
+        from datetime import datetime
+        
+        # Convert channel to string if it's a list
+        channel = campaign_data.channel
+        if isinstance(channel, list):
+            channel = channel[0] if channel else "email"
+        
+        # Create campaign in Django database
+        campaign = await sync_to_async(Campaign.objects.create)(
+            name=campaign_data.name,
+            campaign_type=campaign_data.campaign_type,
+            channel=channel,
+            budget=campaign_data.budget,
+            scheduled_at=campaign_data.scheduled_at,
+            geographic_scope_type=campaign_data.geographic_scope_type,
+            geographic_scope_values=str(campaign_data.geographic_scope_values) if campaign_data.geographic_scope_values else "[]",
+            location=campaign_data.location,
+            property_type=campaign_data.property_type,
+            minimum_equity=campaign_data.minimum_equity,
+            min_price=campaign_data.min_price,
+            max_price=campaign_data.max_price,
+            distress_indicators=str(campaign_data.distress_indicators) if campaign_data.distress_indicators else "[]",
+            subject_line=campaign_data.subject_line,
+            email_content=campaign_data.email_content,
+            use_ai_personalization=campaign_data.use_ai_personalization,
+            status=campaign_data.status
+        )
+        
+        return {
+            "status": "success",
+            "message": "Campaign created successfully",
+            "data": {
+                "id": campaign.id,
+                "name": campaign.name,
+                "campaign_type": campaign.campaign_type,
+                "channel": campaign.channel,
+                "budget": float(campaign.budget) if campaign.budget else None,
+                "scheduled_at": campaign.scheduled_at.isoformat() if campaign.scheduled_at else None,
+                "subject_line": campaign.subject_line,
+                "email_content": campaign.email_content,
+                "use_ai_personalization": campaign.use_ai_personalization,
+                "status": campaign.status,
+                "created_at": campaign.created_at.isoformat(),
+                "updated_at": campaign.created_at.isoformat()
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to create campaign: {str(e)}"
+        }
 
 @app.get("/campaigns/{campaign_id}/")
 @app.options("/campaigns/{campaign_id}/")
 async def get_campaign(campaign_id: int):
-    """Get a specific campaign by ID"""
-    return {
-        "status": "success",
-        "data": {
-            "id": campaign_id,
-            "name": "Sample Campaign",
-            "campaign_type": "new",
-            "channel": ["email"],
-            "budget": 5000.0,
-            "scheduled_at": "2025-10-15T09:00:00Z",
-            "subject_line": "Exclusive Property Investment Opportunities",
-            "email_content": "Discover amazing real estate investment opportunities...",
-            "use_ai_personalization": True,
-            "status": "active",
-            "geographic_scope_type": "zip",
-            "geographic_scope_values": ["30309", "30310"],
-            "location": "Atlanta, GA",
-            "property_type": "Single Family",
-            "minimum_equity": 50000,
-            "min_price": 200000,
-            "max_price": 500000,
-            "distress_indicators": ["foreclosure"],
-            "created_at": "2025-10-09T04:30:00Z",
-            "updated_at": "2025-10-09T04:30:00Z"
+    """Get a specific campaign by ID from Django database"""
+    try:
+        from deelflow.models import Campaign
+        
+        campaign = await sync_to_async(Campaign.objects.get)(id=campaign_id)
+        
+        return {
+            "status": "success",
+            "data": {
+                "id": campaign.id,
+                "name": campaign.name,
+                "campaign_type": campaign.campaign_type,
+                "channel": campaign.channel if isinstance(campaign.channel, list) else [campaign.channel],
+                "budget": float(campaign.budget) if campaign.budget else None,
+                "scheduled_at": campaign.scheduled_at.isoformat() if campaign.scheduled_at else None,
+                "subject_line": campaign.subject_line,
+                "email_content": campaign.email_content,
+                "use_ai_personalization": campaign.use_ai_personalization,
+                "status": campaign.status,
+                "geographic_scope_type": campaign.geographic_scope_type,
+                "geographic_scope_values": campaign.geographic_scope_values if isinstance(campaign.geographic_scope_values, list) else [],
+                "location": campaign.location,
+                "property_type": campaign.property_type,
+                "minimum_equity": float(campaign.minimum_equity) if campaign.minimum_equity else None,
+                "min_price": float(campaign.min_price) if campaign.min_price else None,
+                "max_price": float(campaign.max_price) if campaign.max_price else None,
+                "distress_indicators": campaign.distress_indicators if isinstance(campaign.distress_indicators, list) else [],
+                "created_at": campaign.created_at.isoformat(),
+                "updated_at": campaign.created_at.isoformat()
+            }
         }
-    }
+    except Campaign.DoesNotExist:
+        return {
+            "status": "error",
+            "message": "Campaign not found"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to retrieve campaign: {str(e)}"
+        }
 
 @app.put("/campaigns/{campaign_id}/")
 @app.options("/campaigns/{campaign_id}/")

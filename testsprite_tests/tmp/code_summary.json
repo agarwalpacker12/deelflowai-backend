@@ -1,27 +1,279 @@
 {
-  "tech_stack": ["Python", "FastAPI", "Django", "PostgreSQL", "Pydantic", "JWT", "Stripe", "CORS"],
+  "tech_stack": [
+    "Python",
+    "FastAPI",
+    "SQLite",
+    "Django",
+    "Pydantic",
+    "Uvicorn",
+    "CORS",
+    "JWT",
+    "WebSocket"
+  ],
   "features": [
     {
-      "name": "Authentication API",
-      "description": "User authentication and authorization with JWT tokens",
-      "files": ["fastapi_app/main.py", "fastapi_app/app/api/v1/endpoints/auth.py", "fastapi_app/app/schemas/auth.py"],
+      "name": "Property Management API",
+      "description": "Complete CRUD operations for property management including creation, retrieval, updates, and deletion with AI analysis capabilities",
+      "files": [
+        "fastapi_app/main.py",
+        "fastapi_app/app/api/v1/endpoints/properties.py",
+        "fastapi_app/app/schemas/property.py",
+        "fastapi_app/app/services/property_service.py"
+      ],
       "api_doc": {
         "openapi": "3.0.0",
         "info": {
-          "title": "Authentication API",
-          "version": "1.0.0"
+          "title": "Property Management API",
+          "version": "1.0.0",
+          "description": "Property management endpoints for real estate platform"
         },
         "paths": {
-          "/api/v1/auth/login": {
+          "/properties/": {
+            "get": {
+              "summary": "Get all properties",
+              "responses": {
+                "200": {
+                  "description": "List of properties",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "status": {"type": "string"},
+                          "data": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {"type": "integer"},
+                                "address": {"type": "string"},
+                                "city": {"type": "string"},
+                                "state": {"type": "string"},
+                                "zip": {"type": "string"},
+                                "property_type": {"type": "string"},
+                                "bedrooms": {"type": "integer"},
+                                "bathrooms": {"type": "number"},
+                                "square_feet": {"type": "integer"},
+                                "purchase_price": {"type": "number"},
+                                "arv": {"type": "number"},
+                                "potential_profit": {"type": "number"}
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
             "post": {
-              "summary": "User login",
+              "summary": "Create new property",
               "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "required": ["address", "city", "state", "zip", "county", "property_type", "transaction_type", "description"],
+                      "properties": {
+                        "address": {"type": "string"},
+                        "unit": {"type": "string"},
+                        "city": {"type": "string"},
+                        "state": {"type": "string"},
+                        "zip": {"type": "string"},
+                        "county": {"type": "string"},
+                        "property_type": {"type": "string"},
+                        "bedrooms": {"type": "integer"},
+                        "bathrooms": {"type": "number"},
+                        "square_feet": {"type": "integer"},
+                        "lot_size": {"type": "number"},
+                        "year_built": {"type": "integer"},
+                        "purchase_price": {"type": "number"},
+                        "arv": {"type": "number"},
+                        "repair_estimate": {"type": "number"},
+                        "holding_costs": {"type": "number"},
+                        "transaction_type": {"type": "string"},
+                        "assignment_fee": {"type": "number"},
+                        "description": {"type": "string"},
+                        "seller_notes": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Property created successfully",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "status": {"type": "string"},
+                          "message": {"type": "string"},
+                          "data": {
+                            "type": "object",
+                            "properties": {
+                              "id": {"type": "integer"},
+                              "address": {"type": "string"},
+                              "potential_profit": {"type": "number"}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/properties/{property_id}/": {
+            "get": {
+              "summary": "Get property by ID",
+              "parameters": [
+                {
+                  "name": "property_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {"type": "integer"}
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Property details",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "status": {"type": "string"},
+                          "data": {"type": "object"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "put": {
+              "summary": "Update property",
+              "parameters": [
+                {
+                  "name": "property_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {"type": "integer"}
+                }
+              ],
+              "requestBody": {
+                "required": true,
                 "content": {
                   "application/json": {
                     "schema": {
                       "type": "object",
                       "properties": {
-                        "email": {"type": "string"},
+                        "address": {"type": "string"},
+                        "city": {"type": "string"},
+                        "state": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Property updated successfully"
+                }
+              }
+            },
+            "delete": {
+              "summary": "Delete property",
+              "parameters": [
+                {
+                  "name": "property_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {"type": "integer"}
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Property deleted successfully"
+                }
+              }
+            }
+          },
+          "/properties/{property_id}/ai-analysis/": {
+            "get": {
+              "summary": "Get AI analysis for property",
+              "parameters": [
+                {
+                  "name": "property_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {"type": "integer"}
+                }
+              ],
+              "responses": {
+                "200": {
+                  "description": "AI analysis results",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "status": {"type": "string"},
+                          "data": {
+                            "type": "object",
+                            "properties": {
+                              "analysis_type": {"type": "string"},
+                              "confidence_score": {"type": "number"},
+                              "recommended_price": {"type": "number"},
+                              "market_analysis": {"type": "object"},
+                              "risk_assessment": {"type": "object"},
+                              "recommendations": {"type": "array", "items": {"type": "string"}}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Authentication API",
+      "description": "User authentication and authorization including login, registration, logout, and token management",
+      "files": [
+        "fastapi_app/main.py",
+        "fastapi_app/app/api/v1/endpoints/auth.py",
+        "fastapi_app/app/core/security.py",
+        "fastapi_app/app/schemas/auth.py"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Authentication API",
+          "version": "1.0.0",
+          "description": "User authentication and authorization endpoints"
+        },
+        "paths": {
+          "/api/auth/login": {
+            "post": {
+              "summary": "User login",
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "email": {"type": "string", "format": "email"},
                         "password": {"type": "string"}
                       }
                     }
@@ -37,8 +289,8 @@
                         "type": "object",
                         "properties": {
                           "access_token": {"type": "string"},
-                          "token_type": {"type": "string"},
-                          "user": {"type": "object"}
+                          "refresh_token": {"type": "string"},
+                          "token_type": {"type": "string"}
                         }
                       }
                     }
@@ -47,119 +299,11 @@
               }
             }
           },
-          "/api/v1/auth/register": {
+          "/api/auth/register": {
             "post": {
               "summary": "User registration",
               "requestBody": {
-                "content": {
-                  "application/json": {
-                    "schema": {
-                      "type": "object",
-                      "properties": {
-                        "email": {"type": "string"},
-                        "password": {"type": "string"},
-                        "first_name": {"type": "string"},
-                        "last_name": {"type": "string"}
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "name": "Properties API",
-      "description": "Property management with CRUD operations and AI analysis",
-      "files": ["fastapi_app/main.py", "fastapi_app/app/api/v1/endpoints/properties.py", "fastapi_app/app/schemas/property.py"],
-      "api_doc": {
-        "openapi": "3.0.0",
-        "info": {
-          "title": "Properties API",
-          "version": "1.0.0"
-        },
-        "paths": {
-          "/api/v1/properties/": {
-            "get": {
-              "summary": "Get all properties",
-              "parameters": [
-                {"name": "skip", "in": "query", "type": "integer"},
-                {"name": "limit", "in": "query", "type": "integer"},
-                {"name": "search", "in": "query", "type": "string"},
-                {"name": "property_type", "in": "query", "type": "string"}
-              ]
-            },
-            "post": {
-              "summary": "Create new property",
-              "requestBody": {
-                "content": {
-                  "application/json": {
-                    "schema": {
-                      "type": "object",
-                      "properties": {
-                        "street_address": {"type": "string"},
-                        "city": {"type": "string"},
-                        "state": {"type": "string"},
-                        "zip_code": {"type": "string"},
-                        "property_type": {"type": "string"},
-                        "bedrooms": {"type": "integer"},
-                        "bathrooms": {"type": "number"},
-                        "square_feet": {"type": "integer"},
-                        "purchase_price": {"type": "number"},
-                        "arv": {"type": "number"}
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "/api/v1/properties/{property_id}": {
-            "get": {
-              "summary": "Get property by ID"
-            },
-            "put": {
-              "summary": "Update property"
-            },
-            "delete": {
-              "summary": "Delete property"
-            }
-          },
-          "/api/v1/properties/{property_id}/ai-analysis": {
-            "get": {
-              "summary": "Get AI analysis for property"
-            }
-          }
-        }
-      }
-    },
-    {
-      "name": "Leads API",
-      "description": "Lead management with filtering and qualification",
-      "files": ["fastapi_app/main.py", "fastapi_app/app/api/v1/endpoints/leads.py", "fastapi_app/app/schemas/lead.py"],
-      "api_doc": {
-        "openapi": "3.0.0",
-        "info": {
-          "title": "Leads API",
-          "version": "1.0.0"
-        },
-        "paths": {
-          "/api/v1/leads/": {
-            "get": {
-              "summary": "Get all leads",
-              "parameters": [
-                {"name": "skip", "in": "query", "type": "integer"},
-                {"name": "limit", "in": "query", "type": "integer"},
-                {"name": "search", "in": "query", "type": "string"},
-                {"name": "status", "in": "query", "type": "string"},
-                {"name": "source", "in": "query", "type": "string"}
-              ]
-            },
-            "post": {
-              "summary": "Create new lead",
-              "requestBody": {
+                "required": true,
                 "content": {
                   "application/json": {
                     "schema": {
@@ -167,84 +311,62 @@
                       "properties": {
                         "first_name": {"type": "string"},
                         "last_name": {"type": "string"},
-                        "email": {"type": "string"},
+                        "organization_name": {"type": "string"},
                         "phone": {"type": "string"},
-                        "property_address": {"type": "string"},
-                        "property_city": {"type": "string"},
-                        "property_state": {"type": "string"},
-                        "property_zip": {"type": "string"},
-                        "source": {"type": "string"},
-                        "status": {"type": "string"}
+                        "email": {"type": "string", "format": "email"},
+                        "password": {"type": "string"}
                       }
                     }
                   }
                 }
+              },
+              "responses": {
+                "200": {
+                  "description": "Registration successful"
+                }
               }
-            }
-          },
-          "/api/v1/leads/{lead_id}": {
-            "get": {
-              "summary": "Get lead by ID"
-            },
-            "put": {
-              "summary": "Update lead"
-            },
-            "delete": {
-              "summary": "Delete lead"
-            }
-          },
-          "/api/v1/leads/{lead_id}/qualify": {
-            "post": {
-              "summary": "Qualify lead"
-            }
-          },
-          "/api/v1/leads/{lead_id}/convert": {
-            "post": {
-              "summary": "Convert lead to deal"
             }
           }
         }
       }
     },
     {
-      "name": "Campaigns API",
-      "description": "Marketing campaign management with multi-channel support",
-      "files": ["fastapi_app/main.py", "fastapi_app/app/api/v1/endpoints/campaigns.py", "fastapi_app/app/schemas/campaign.py"],
+      "name": "Dashboard Analytics API",
+      "description": "Comprehensive dashboard metrics and analytics including revenue, user stats, property counts, and AI performance metrics",
+      "files": [
+        "fastapi_app/main.py",
+        "fastapi_app/app/api/v1/endpoints/analytics.py"
+      ],
       "api_doc": {
         "openapi": "3.0.0",
         "info": {
-          "title": "Campaigns API",
-          "version": "1.0.0"
+          "title": "Dashboard Analytics API",
+          "version": "1.0.0",
+          "description": "Dashboard metrics and analytics endpoints"
         },
         "paths": {
-          "/api/v1/campaigns/": {
+          "/stats": {
             "get": {
-              "summary": "Get all campaigns"
-            },
-            "post": {
-              "summary": "Create new campaign",
-              "requestBody": {
-                "content": {
-                  "application/json": {
-                    "schema": {
-                      "type": "object",
-                      "properties": {
-                        "name": {"type": "string"},
-                        "campaign_type": {"type": "string"},
-                        "channel": {"type": "array", "items": {"type": "string"}},
-                        "budget": {"type": "number"},
-                        "scheduled_at": {"type": "string", "format": "date-time"},
-                        "subject_line": {"type": "string"},
-                        "email_content": {"type": "string"},
-                        "use_ai_personalization": {"type": "boolean"},
-                        "status": {"type": "string"},
-                        "geographic_scope_type": {"type": "string"},
-                        "geographic_scope_values": {"type": "array", "items": {"type": "string"}},
-                        "location": {"type": "string"},
-                        "property_type": {"type": "string"},
-                        "min_price": {"type": "number"},
-                        "max_price": {"type": "number"},
-                        "distress_indicators": {"type": "array", "items": {"type": "string"}}
+              "summary": "Get dashboard statistics",
+              "responses": {
+                "200": {
+                  "description": "Dashboard stats",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "status": {"type": "string"},
+                          "data": {
+                            "type": "object",
+                            "properties": {
+                              "total_revenue": {"type": "number"},
+                              "active_users": {"type": "integer"},
+                              "properties_listed": {"type": "integer"},
+                              "total_deals": {"type": "integer"}
+                            }
+                          }
+                        }
                       }
                     }
                   }
@@ -252,126 +374,123 @@
               }
             }
           },
-          "/api/v1/campaigns/{campaign_id}": {
+          "/total-revenue/": {
             "get": {
-              "summary": "Get campaign by ID"
-            },
-            "put": {
-              "summary": "Update campaign"
-            },
-            "delete": {
-              "summary": "Delete campaign"
+              "summary": "Get total revenue metrics",
+              "responses": {
+                "200": {
+                  "description": "Revenue metrics",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "status": {"type": "string"},
+                          "data": {
+                            "type": "object",
+                            "properties": {
+                              "total_revenue": {"type": "number"},
+                              "change_percentage": {"type": "number"}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
       }
     },
     {
-      "name": "Deals API",
-      "description": "Deal management with milestone tracking",
-      "files": ["fastapi_app/main.py", "fastapi_app/app/api/v1/endpoints/deals.py", "fastapi_app/app/schemas/deal.py"],
+      "name": "Lead Management API",
+      "description": "Lead discovery, management, and AI scoring for real estate leads",
+      "files": [
+        "fastapi_app/app/api/v1/endpoints/leads.py",
+        "fastapi_app/app/schemas/lead.py",
+        "fastapi_app/app/services/lead_service.py"
+      ],
       "api_doc": {
         "openapi": "3.0.0",
         "info": {
-          "title": "Deals API",
-          "version": "1.0.0"
+          "title": "Lead Management API",
+          "version": "1.0.0",
+          "description": "Lead management and AI scoring endpoints"
+        },
+        "paths": {
+          "/api/v1/leads/": {
+            "get": {
+              "summary": "Get all leads",
+              "responses": {
+                "200": {
+                  "description": "List of leads",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {"type": "integer"},
+                            "name": {"type": "string"},
+                            "email": {"type": "string"},
+                            "phone": {"type": "string"},
+                            "status": {"type": "string"}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Deal Management API",
+      "description": "Deal tracking, management, and financial calculations for real estate transactions",
+      "files": [
+        "fastapi_app/app/api/v1/endpoints/deals.py",
+        "fastapi_app/app/schemas/deal.py",
+        "fastapi_app/app/services/deal_service.py"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Deal Management API",
+          "version": "1.0.0",
+          "description": "Deal management and tracking endpoints"
         },
         "paths": {
           "/api/v1/deals/": {
             "get": {
-              "summary": "Get all deals"
-            },
-            "post": {
-              "summary": "Create new deal"
-            }
-          },
-          "/api/v1/deals/{deal_id}": {
-            "get": {
-              "summary": "Get deal by ID"
-            },
-            "put": {
-              "summary": "Update deal"
-            },
-            "delete": {
-              "summary": "Delete deal"
-            }
-          },
-          "/api/v1/deals/{deal_id}/close": {
-            "post": {
-              "summary": "Close deal"
-            }
-          }
-        }
-      }
-    },
-    {
-      "name": "Payment API",
-      "description": "Stripe payment integration with subscriptions",
-      "files": ["deelflow/views.py", "deelflow/urls.py", "fastapi_app/app/schemas/payment.py"],
-      "api_doc": {
-        "openapi": "3.0.0",
-        "info": {
-          "title": "Payment API",
-          "version": "1.0.0"
-        },
-        "paths": {
-          "/api/subscription-packages/": {
-            "get": {
-              "summary": "Get subscription packages"
-            }
-          },
-          "/api/create-checkout-session/": {
-            "post": {
-              "summary": "Create Stripe checkout session"
-            }
-          },
-          "/api/stripe-webhook/": {
-            "post": {
-              "summary": "Handle Stripe webhooks"
-            }
-          },
-          "/api/user-subscription/": {
-            "get": {
-              "summary": "Get user subscription"
-            }
-          },
-          "/api/config/": {
-            "get": {
-              "summary": "Get payment configuration"
-            }
-          }
-        }
-      }
-    },
-    {
-      "name": "Dashboard API",
-      "description": "Dashboard statistics and analytics",
-      "files": ["fastapi_app/main.py", "fastapi_app/database.py"],
-      "api_doc": {
-        "openapi": "3.0.0",
-        "info": {
-          "title": "Dashboard API",
-          "version": "1.0.0"
-        },
-        "paths": {
-          "/api/dashboard/stats/": {
-            "get": {
-              "summary": "Get dashboard statistics"
-            }
-          },
-          "/api/total-revenue/": {
-            "get": {
-              "summary": "Get total revenue"
-            }
-          },
-          "/api/active-users/": {
-            "get": {
-              "summary": "Get active users count"
-            }
-          },
-          "/api/properties-listed/": {
-            "get": {
-              "summary": "Get properties listed count"
+              "summary": "Get all deals",
+              "responses": {
+                "200": {
+                  "description": "List of deals",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {"type": "integer"},
+                            "deal_type": {"type": "string"},
+                            "status": {"type": "string"},
+                            "offer_price": {"type": "number"},
+                            "final_price": {"type": "number"}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -379,35 +498,54 @@
     },
     {
       "name": "AI Services API",
-      "description": "AI-powered analysis and processing",
-      "files": ["fastapi_app/app/api/v1/endpoints/ai.py", "fastapi_app/app/schemas/ai.py"],
+      "description": "AI-powered analysis including property image analysis, NLP processing, and blockchain transactions",
+      "files": [
+        "fastapi_app/app/api/v1/endpoints/ai.py",
+        "fastapi_app/app/schemas/ai.py",
+        "fastapi_app/app/services/ai_service.py"
+      ],
       "api_doc": {
         "openapi": "3.0.0",
         "info": {
           "title": "AI Services API",
-          "version": "1.0.0"
+          "version": "1.0.0",
+          "description": "AI-powered analysis and processing endpoints"
         },
         "paths": {
-          "/api/v1/ai/analyze-property-image": {
+          "/api/v1/ai/analyze-image": {
             "post": {
               "summary": "Analyze property image",
               "requestBody": {
+                "required": true,
                 "content": {
                   "multipart/form-data": {
                     "schema": {
                       "type": "object",
                       "properties": {
-                        "file": {"type": "string", "format": "binary"}
+                        "file": {"type": "string", "format": "binary"},
+                        "analysis_type": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Image analysis results",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "analysis_type": {"type": "string"},
+                          "confidence_score": {"type": "number"},
+                          "results": {"type": "object"}
+                        }
                       }
                     }
                   }
                 }
               }
-            }
-          },
-          "/api/v1/ai/process-text": {
-            "post": {
-              "summary": "Process text with NLP"
             }
           }
         }
