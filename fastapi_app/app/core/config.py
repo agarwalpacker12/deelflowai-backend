@@ -9,7 +9,7 @@ from pydantic import validator
 
 class Settings(BaseSettings):
     # API Configuration
-    API_V1_STR: str = "/api/v1"
+    API_V1_STR: str = "/api"
     PROJECT_NAME: str = "DeelFlowAI Backend"
     VERSION: str = "1.0.0"
     
