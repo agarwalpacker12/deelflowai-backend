@@ -7,6 +7,48 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from decimal import Decimal
 
+class DealResponse(BaseModel):
+    """Deal response model"""
+    property_id: int
+    buyer_lead_id: int
+    seller_lead_id: int
+    deal_type: str
+    status: str
+    offer_price: str
+    final_price: str
+    commission: str
+    closing_date: str
+    notes: str
+    id: int
+    created_at: str
+    updated_at: str
+
+class DealCreateRequest(BaseModel):
+    """Deal creation request model"""
+    property_id: int
+    buyer_lead_id: int
+    seller_lead_id: int
+    deal_type: str
+    status: str = "pending"
+    offer_price: int
+    final_price: int
+    commission: int
+    closing_date: str
+    notes: str
+
+class DealUpdateRequest(BaseModel):
+    """Deal update request model"""
+    property_id: int
+    buyer_lead_id: int
+    seller_lead_id: int
+    deal_type: str
+    status: str
+    offer_price: int
+    final_price: int
+    commission: int
+    closing_date: str
+    notes: str
+
 class DealBase(BaseModel):
     """Base deal schema"""
     property_id: int

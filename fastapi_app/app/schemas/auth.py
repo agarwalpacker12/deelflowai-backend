@@ -29,6 +29,15 @@ class RegisterRequest(BaseModel):
     last_name: str
     organization_id: Optional[int] = None
 
+class RegisterRequestV2(BaseModel):
+    """Registration request model v2"""
+    first_name: str
+    last_name: str
+    organization_name: str
+    phone: Optional[str] = None
+    email: str
+    password: str
+
 class PasswordResetRequest(BaseModel):
     """Password reset request schema"""
     email: EmailStr

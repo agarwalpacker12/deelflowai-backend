@@ -15,6 +15,14 @@ import django
 import datetime
 from pathlib import Path
 
+# Import schemas from their respective files
+from app.schemas.campaign import CampaignCreate, CampaignUpdate, CampaignResponse, CampaignListResponse
+from app.schemas.user import LoginRequest, UserResponse, UserCreateRequest, UserUpdateRequest, UsersListResponse
+from app.schemas.property import PropertyResponse, PropertyCreateRequest, PropertyUpdateRequest, PropertyCreate, PropertyUpdate
+from app.schemas.lead import LeadResponse, LeadCreateRequest, LeadUpdateRequest, DiscoveredLeadResponse
+from app.schemas.deal import DealResponse, DealCreateRequest, DealUpdateRequest
+from app.schemas.auth import RegisterRequest, RegisterRequestV2
+
 # Mock data functions (replacing deleted database module)
 # Import database functions
 from database import (
@@ -611,111 +619,13 @@ async def login():
     }
 
 # ===== API v1 login to match documented OpenAPI (/api/v1/auth/login) =====
-class LoginRequest(BaseModel):
-    email: str
-    password: str
+# User API Models - now imported from app.schemas.user
 
-# User API Models
-class UserResponse(BaseModel):
-    """User response model"""
-    email: str
-    first_name: str
-    last_name: str
-    phone: str
-    is_active: bool
-    is_verified: bool
-    id: int
-    uuid: str
-    role: str
-    level: int
-    points: int
-    organization: dict
-    created_at: str
-    updated_at: str
+# Property API Models - now imported from app.schemas.property
 
-class UserCreateRequest(BaseModel):
-    """User creation request model"""
-    email: str
-    first_name: str
-    last_name: str
-    phone: str
-    is_active: bool = True
-    is_verified: bool = False
-    password: str
-    organization_id: int
-    role: str = "user"
+# Lead API Models - now imported from app.schemas.lead
 
-class UserUpdateRequest(BaseModel):
-    """User update request model"""
-    first_name: str
-    last_name: str
-    phone: str
-    is_active: bool
-    is_verified: bool
-    role: str
-
-class UsersListResponse(BaseModel):
-    """Users list response model"""
-    users: List[UserResponse]
-    total: int
-    page: int
-    limit: int
-    has_next: bool
-    has_prev: bool
-
-# Property API Models
-class PropertyResponse(BaseModel):
-    """Property response model"""
-    address: str
-    city: str
-    state: str
-    zipcode: str
-    property_type: str
-    price: str
-    bedrooms: int
-    bathrooms: int
-    square_feet: int
-    lot_size: int
-    year_built: int
-    description: str
-    images: List[str]
-    id: int
-    status: str
-    ai_analysis: dict
-    created_at: str
-    updated_at: str
-
-class PropertyCreateRequest(BaseModel):
-    """Property creation request model"""
-    address: str
-    city: str
-    state: str
-    zipcode: str
-    property_type: str
-    price: int
-    bedrooms: int
-    bathrooms: int
-    square_feet: int
-    lot_size: int
-    year_built: int
-    description: str
-    images: List[str] = []
-
-class PropertyUpdateRequest(BaseModel):
-    """Property update request model"""
-    address: str
-    city: str
-    state: str
-    zipcode: str
-    property_type: str
-    price: int
-    bedrooms: int
-    bathrooms: int
-    square_feet: int
-    lot_size: int
-    year_built: int
-    description: str
-    images: List[str]
+# Deal API Models - now imported from app.schemas.deal
 
 @app.post("/api/v1/auth/login")
 async def login_v1(payload: LoginRequest):
@@ -758,12 +668,7 @@ async def login_v1(payload: LoginRequest):
     }
 
 # ===== API v1 register to match documented OpenAPI (/api/v1/auth/register) =====
-class RegisterRequest(BaseModel):
-    email: str
-    password: str
-    first_name: str
-    last_name: str
-    organization_id: int
+# RegisterRequest - now imported from app.schemas.auth
 
 @app.post("/api/v1/auth/register")
 async def register_v1(payload: RegisterRequest):
@@ -1140,19 +1045,35 @@ async def create_property(
     now = datetime.now(timezone.utc).isoformat()
     
     return {
-        "address": property_data.address,
+        # Basic Address Information
+        "street_address": property_data.street_address,
+        "unit_apt": property_data.unit_apt,
         "city": property_data.city,
         "state": property_data.state,
-        "zipcode": property_data.zipcode,
+        "zip_code": property_data.zip_code,
+        "county": property_data.county,
+        
+        # Property Details
         "property_type": property_data.property_type,
-        "price": str(property_data.price),
         "bedrooms": property_data.bedrooms,
         "bathrooms": property_data.bathrooms,
         "square_feet": property_data.square_feet,
         "lot_size": property_data.lot_size,
         "year_built": property_data.year_built,
-        "description": property_data.description,
-        "images": property_data.images,
+        
+        # Financial Information
+        "purchase_price": property_data.purchase_price,
+        "arv": property_data.arv,
+        "repair_estimate": property_data.repair_estimate,
+        "holding_costs": property_data.holding_costs,
+        "transaction_type": property_data.transaction_type,
+        "assignment_fee": property_data.assignment_fee,
+        
+        # Additional Information
+        "property_description": property_data.property_description,
+        "seller_notes": property_data.seller_notes,
+        
+        # System Fields
         "id": 1,  # Mock ID
         "status": "available",
         "ai_analysis": {"score": 80, "recommendation": "good_potential"},
@@ -1168,22 +1089,38 @@ async def get_property(property_id: int = PathParam(..., description="property_i
     now = datetime.now(timezone.utc).isoformat()
     
     return {
-        "address": "123 Main St",
+        # Basic Address Information
+        "street_address": "123 Main St",
+        "unit_apt": "Apt 2B",
         "city": "New York",
         "state": "NY",
-        "zipcode": "10001",
+        "zip_code": "10001",
+        "county": "New York County",
+        
+        # Property Details
         "property_type": "apartment",
-        "price": "500000",
-        "bedrooms": 2,
-        "bathrooms": 2,
-        "square_feet": 1200,
-        "lot_size": 0,
-        "year_built": 2020,
-        "description": "Beautiful modern apartment in downtown",
-        "images": ["image1.jpg", "image2.jpg"],
+        "bedrooms": "2",
+        "bathrooms": "2",
+        "square_feet": "1200",
+        "lot_size": "0",
+        "year_built": "2020",
+        
+        # Financial Information
+        "purchase_price": "450000",
+        "arv": "550000",
+        "repair_estimate": "15000",
+        "holding_costs": "5000",
+        "transaction_type": "sale",
+        "assignment_fee": "10000",
+        
+        # Additional Information
+        "property_description": "Beautiful modern apartment in downtown",
+        "seller_notes": "Motivated seller, needs quick sale",
+        
+        # System Fields
         "id": property_id,
         "status": "available",
-        "ai_analysis": {"score": 85, "recommendation": "good_investment"},
+        "ai_analysis": {"score": 85, "recommendation": "excellent_potential"},
         "created_at": now,
         "updated_at": now
     }
@@ -1232,6 +1169,460 @@ async def delete_property(
 async def get_property_ai_analysis(property_id: int = PathParam(..., description="property_id")):
     """Get AI analysis for a property"""
     return "AI analysis completed: This property shows strong investment potential with 85% confidence score and positive market trends."
+
+# Lead API Endpoints
+@app.get("/api/v1/leads/")
+async def get_leads(
+    skip: int = Query(0, ge=0, description="skip"),
+    limit: int = Query(100, ge=1, le=1000, description="limit"),
+    search: Optional[str] = Query(None, description="search"),
+    status: Optional[str] = Query(None, description="status"),
+    source: Optional[str] = Query(None, description="source")
+):
+    """Get list of leads with filtering and pagination"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Mock lead data
+    mock_leads = [
+        {
+            "name": "John Smith",
+            "email": "john.smith@email.com",
+            "phone": "555-0123",
+            "address": "123 Oak Street",
+            "city": "Atlanta",
+            "state": "GA",
+            "zipcode": "30309",
+            "status": "new",
+            "source": "website",
+            "motivation_score": 85,
+            "property_condition": "good",
+            "financial_situation": "stable",
+            "timeline_urgency": "moderate",
+            "negotiation_style": "collaborative",
+            "notes": "Interested in investment properties",
+            "id": 1,
+            "campaign_id": 1,
+            "created_at": now,
+            "updated_at": now
+        },
+        {
+            "name": "Sarah Johnson",
+            "email": "sarah.j@email.com",
+            "phone": "555-0456",
+            "address": "456 Pine Avenue",
+            "city": "Miami",
+            "state": "FL",
+            "zipcode": "33101",
+            "status": "qualified",
+            "source": "referral",
+            "motivation_score": 92,
+            "property_condition": "excellent",
+            "financial_situation": "strong",
+            "timeline_urgency": "high",
+            "negotiation_style": "direct",
+            "notes": "Looking for quick sale",
+            "id": 2,
+            "campaign_id": 1,
+            "created_at": now,
+            "updated_at": now
+        }
+    ]
+    
+    # Apply filters (mock implementation)
+    filtered_leads = mock_leads
+    if search:
+        filtered_leads = [l for l in filtered_leads if search.lower() in l["name"].lower() or search.lower() in l["email"].lower()]
+    if status:
+        filtered_leads = [l for l in filtered_leads if l["status"] == status]
+    if source:
+        filtered_leads = [l for l in filtered_leads if l["source"] == source]
+    
+    # Apply pagination
+    start = skip
+    end = skip + limit
+    paginated_leads = filtered_leads[start:end]
+    
+    return paginated_leads
+
+@app.post("/api/v1/leads/")
+async def create_lead(
+    lead_data: LeadCreateRequest,
+    func: str = Query(..., description="func")
+):
+    """Create a new lead"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        "name": lead_data.name,
+        "email": lead_data.email,
+        "phone": lead_data.phone,
+        "address": lead_data.address,
+        "city": lead_data.city,
+        "state": lead_data.state,
+        "zipcode": lead_data.zipcode,
+        "status": lead_data.status,
+        "source": lead_data.source,
+        "motivation_score": lead_data.motivation_score,
+        "property_condition": lead_data.property_condition,
+        "financial_situation": lead_data.financial_situation,
+        "timeline_urgency": lead_data.timeline_urgency,
+        "negotiation_style": lead_data.negotiation_style,
+        "notes": lead_data.notes,
+        "id": 1,  # Mock ID
+        "campaign_id": lead_data.campaign_id,
+        "created_at": now,
+        "updated_at": now
+    }
+
+@app.get("/api/v1/leads/{lead_id}")
+async def get_lead(lead_id: int = PathParam(..., description="lead_id")):
+    """Get lead by ID"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Mock lead data - in real implementation, fetch from database
+    mock_lead = {
+        "name": "John Smith",
+        "email": "john.smith@email.com",
+        "phone": "555-0123",
+        "address": "123 Oak Street",
+        "city": "Atlanta",
+        "state": "GA",
+        "zipcode": "30309",
+        "status": "new",
+        "source": "manual",
+        "motivation_score": 0,
+        "property_condition": "string",
+        "financial_situation": "string",
+        "timeline_urgency": "string",
+        "negotiation_style": "string",
+        "notes": "string",
+        "id": lead_id,
+        "campaign_id": 0,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    return mock_lead
+
+@app.put("/api/v1/leads/{lead_id}")
+async def update_lead(
+    lead_id: int = PathParam(..., description="lead_id"),
+    lead_data: LeadUpdateRequest = None,
+    func: str = Query(..., description="func")
+):
+    """Update lead information"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        "name": lead_data.name,
+        "email": lead_data.email,
+        "phone": lead_data.phone,
+        "address": lead_data.address,
+        "city": lead_data.city,
+        "state": lead_data.state,
+        "zipcode": lead_data.zipcode,
+        "status": lead_data.status,
+        "source": lead_data.source,
+        "motivation_score": lead_data.motivation_score,
+        "property_condition": lead_data.property_condition,
+        "financial_situation": lead_data.financial_situation,
+        "timeline_urgency": lead_data.timeline_urgency,
+        "negotiation_style": lead_data.negotiation_style,
+        "notes": lead_data.notes,
+        "id": lead_id,
+        "campaign_id": 0,  # Mock campaign_id
+        "created_at": now,
+        "updated_at": now
+    }
+
+@app.delete("/api/v1/leads/{lead_id}")
+async def delete_lead(
+    lead_id: int = PathParam(..., description="lead_id"),
+    func: str = Query(..., description="func")
+):
+    """Delete lead"""
+    return "Lead deleted successfully"
+
+@app.get("/api/v1/leads/discovered/")
+async def get_discovered_leads(
+    skip: int = Query(0, ge=0, description="skip"),
+    limit: int = Query(100, ge=1, le=1000, description="limit"),
+    source: Optional[str] = Query(None, description="source")
+):
+    """Get discovered leads from AI scraping"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Mock discovered lead data
+    mock_discovered_leads = [
+        {
+            "owner_name": "Robert Johnson",
+            "address": "456 Maple Drive",
+            "city": "Austin",
+            "state": "TX",
+            "zipcode": "78701",
+            "source": "zillow",
+            "details": "Property listed for 6+ months, price reduced twice",
+            "motivation_score": 88,
+            "property_condition": "good",
+            "financial_situation": "moderate",
+            "timeline_urgency": "high",
+            "negotiation_style": "flexible",
+            "id": 1,
+            "created_at": now,
+            "updated_at": now
+        },
+        {
+            "owner_name": "Maria Garcia",
+            "address": "789 Pine Street",
+            "city": "Phoenix",
+            "state": "AZ",
+            "zipcode": "85001",
+            "source": "realtor",
+            "details": "Divorce situation, needs quick sale",
+            "motivation_score": 92,
+            "property_condition": "excellent",
+            "financial_situation": "urgent",
+            "timeline_urgency": "immediate",
+            "negotiation_style": "direct",
+            "id": 2,
+            "created_at": now,
+            "updated_at": now
+        },
+        {
+            "owner_name": "David Wilson",
+            "address": "321 Oak Avenue",
+            "city": "Denver",
+            "state": "CO",
+            "zipcode": "80201",
+            "source": "facebook",
+            "details": "Estate sale, inherited property",
+            "motivation_score": 75,
+            "property_condition": "fair",
+            "financial_situation": "stable",
+            "timeline_urgency": "low",
+            "negotiation_style": "patient",
+            "id": 3,
+            "created_at": now,
+            "updated_at": now
+        }
+    ]
+    
+    # Apply source filter if provided
+    filtered_leads = mock_discovered_leads
+    if source:
+        filtered_leads = [l for l in filtered_leads if l["source"] == source]
+    
+    # Apply pagination
+    start = skip
+    end = skip + limit
+    paginated_leads = filtered_leads[start:end]
+    
+    return paginated_leads
+
+@app.post("/api/v1/leads/{lead_id}/qualify")
+async def qualify_lead(
+    lead_id: int = PathParam(..., description="lead_id"),
+    func: str = Query(..., description="func")
+):
+    """Qualify a lead"""
+    return "Lead qualified successfully"
+
+@app.post("/api/v1/leads/{lead_id}/convert")
+async def convert_lead(
+    lead_id: int = PathParam(..., description="lead_id"),
+    func: str = Query(..., description="func")
+):
+    """Convert a lead"""
+    return "Lead converted successfully"
+
+# Deal API Endpoints
+@app.get("/api/v1/deals/")
+async def get_deals(
+    skip: int = Query(0, ge=0, description="skip"),
+    limit: int = Query(100, ge=1, le=1000, description="limit"),
+    search: Optional[str] = Query(None, description="search"),
+    status: Optional[str] = Query(None, description="status"),
+    deal_type: Optional[str] = Query(None, description="deal_type")
+):
+    """Get list of deals with filtering and pagination"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Mock deal data
+    mock_deals = [
+        {
+            "property_id": 1,
+            "buyer_lead_id": 1,
+            "seller_lead_id": 2,
+            "deal_type": "sale",
+            "status": "pending",
+            "offer_price": "450000",
+            "final_price": "445000",
+            "commission": "13350",
+            "closing_date": "2025-11-15T00:00:00Z",
+            "notes": "First offer accepted, inspection scheduled",
+            "id": 1,
+            "created_at": now,
+            "updated_at": now
+        },
+        {
+            "property_id": 2,
+            "buyer_lead_id": 3,
+            "seller_lead_id": 4,
+            "deal_type": "rental",
+            "status": "closed",
+            "offer_price": "2500",
+            "final_price": "2500",
+            "commission": "250",
+            "closing_date": "2025-10-01T00:00:00Z",
+            "notes": "Rental agreement signed, tenant moved in",
+            "id": 2,
+            "created_at": now,
+            "updated_at": now
+        },
+        {
+            "property_id": 3,
+            "buyer_lead_id": 5,
+            "seller_lead_id": 6,
+            "deal_type": "investment",
+            "status": "negotiating",
+            "offer_price": "320000",
+            "final_price": "0",
+            "commission": "9600",
+            "closing_date": "2025-12-01T00:00:00Z",
+            "notes": "Counter-offer received, reviewing terms",
+            "id": 3,
+            "created_at": now,
+            "updated_at": now
+        }
+    ]
+    
+    # Apply filters (mock implementation)
+    filtered_deals = mock_deals
+    if search:
+        filtered_deals = [d for d in filtered_deals if search.lower() in d["notes"].lower() or search.lower() in d["deal_type"].lower()]
+    if status:
+        filtered_deals = [d for d in filtered_deals if d["status"] == status]
+    if deal_type:
+        filtered_deals = [d for d in filtered_deals if d["deal_type"] == deal_type]
+    
+    # Apply pagination
+    start = skip
+    end = skip + limit
+    paginated_deals = filtered_deals[start:end]
+    
+    return paginated_deals
+
+@app.post("/api/v1/deals/")
+async def create_deal(
+    deal_data: DealCreateRequest,
+    func: str = Query(..., description="func")
+):
+    """Create a new deal"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        "property_id": deal_data.property_id,
+        "buyer_lead_id": deal_data.buyer_lead_id,
+        "seller_lead_id": deal_data.seller_lead_id,
+        "deal_type": deal_data.deal_type,
+        "status": deal_data.status,
+        "offer_price": str(deal_data.offer_price),
+        "final_price": str(deal_data.final_price),
+        "commission": str(deal_data.commission),
+        "closing_date": deal_data.closing_date,
+        "notes": deal_data.notes,
+        "id": 1,  # Mock ID
+        "created_at": now,
+        "updated_at": now
+    }
+
+@app.get("/api/v1/deals/{deal_id}")
+async def get_deal(deal_id: int = PathParam(..., description="deal_id")):
+    """Get deal by ID"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Mock deal data - in real implementation, fetch from database
+    mock_deal = {
+        "property_id": 0,
+        "buyer_lead_id": 0,
+        "seller_lead_id": 0,
+        "deal_type": "string",
+        "status": "pending",
+        "offer_price": "string",
+        "final_price": "string",
+        "commission": "string",
+        "closing_date": now,
+        "notes": "string",
+        "id": deal_id,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    return mock_deal
+
+@app.put("/api/v1/deals/{deal_id}")
+async def update_deal(
+    deal_id: int = PathParam(..., description="deal_id"),
+    deal_data: DealUpdateRequest = None,
+    func: str = Query(..., description="func")
+):
+    """Update deal information"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        "property_id": deal_data.property_id,
+        "buyer_lead_id": deal_data.buyer_lead_id,
+        "seller_lead_id": deal_data.seller_lead_id,
+        "deal_type": deal_data.deal_type,
+        "status": deal_data.status,
+        "offer_price": str(deal_data.offer_price),
+        "final_price": str(deal_data.final_price),
+        "commission": str(deal_data.commission),
+        "closing_date": deal_data.closing_date,
+        "notes": deal_data.notes,
+        "id": deal_id,
+        "created_at": now,
+        "updated_at": now
+    }
+
+@app.delete("/api/v1/deals/{deal_id}")
+async def delete_deal(
+    deal_id: int = PathParam(..., description="deal_id"),
+    func: str = Query(..., description="func")
+):
+    """Delete deal"""
+    return "Deal deleted successfully"
+
+@app.post("/api/v1/deals/{deal_id}/close")
+async def close_deal(
+    deal_id: int = PathParam(..., description="deal_id"),
+    func: str = Query(..., description="func")
+):
+    """Close a deal"""
+    return "Deal closed successfully"
+
+@app.get("/api/v1/deals/{deal_id}/milestones")
+async def get_deal_milestones(deal_id: int = PathParam(..., description="deal_id")):
+    """Get deal milestones"""
+    return "Deal milestones: 1. Initial offer submitted, 2. Counter-offer received, 3. Inspection scheduled, 4. Final negotiations, 5. Closing documents prepared"
 
 @app.post("/test-login/")
 async def test_login(request: Request):
@@ -1293,19 +1684,12 @@ async def login_with_trailing_slash(request: Request):
             content={"status": "error", "message": "Invalid credentials"}
         )
 
-class RegisterRequest(BaseModel):
-    """Registration request model"""
-    first_name: str
-    last_name: str
-    organization_name: str
-    phone: Optional[str] = None
-    email: str
-    password: str
+# RegisterRequestV2 - now imported from app.schemas.auth
 
 @app.get("/api/auth/register")
 @app.post("/api/auth/register")
 @app.options("/api/auth/register")
-async def register(request: RegisterRequest = None):
+async def register(request: RegisterRequestV2 = None):
     """User registration endpoint"""
     from app.core.security import create_access_token, create_refresh_token
     import uuid
@@ -1871,52 +2255,7 @@ async def get_properties():
         "limit": 20
     }
 
-class PropertyCreate(BaseModel):
-    """Property creation request model"""
-    address: str
-    unit: Optional[str] = None
-    city: str
-    state: str
-    zip: str
-    county: Optional[str] = "Unknown"
-    property_type: str
-    price: Optional[float] = None
-    bedrooms: Optional[int] = None
-    bathrooms: Optional[float] = None
-    square_feet: Optional[int] = None
-    lot_size: Optional[float] = None
-    year_built: Optional[int] = None
-    purchase_price: Optional[float] = None
-    arv: Optional[float] = None
-    repair_estimate: Optional[float] = None
-    holding_costs: Optional[float] = None
-    transaction_type: Optional[str] = "sale"
-    assignment_fee: Optional[float] = None
-    description: str
-    seller_notes: Optional[str] = None
-
-class PropertyUpdate(BaseModel):
-    """Property update request model - all fields optional for partial updates"""
-    address: Optional[str] = None
-    unit: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zip: Optional[str] = None
-    county: Optional[str] = None
-    property_type: Optional[str] = None
-    bedrooms: Optional[int] = None
-    bathrooms: Optional[float] = None
-    square_feet: Optional[int] = None
-    lot_size: Optional[float] = None
-    year_built: Optional[int] = None
-    purchase_price: Optional[float] = None
-    arv: Optional[float] = None
-    repair_estimate: Optional[float] = None
-    holding_costs: Optional[float] = None
-    transaction_type: Optional[str] = None
-    assignment_fee: Optional[float] = None
-    description: Optional[str] = None
-    seller_notes: Optional[str] = None
+# PropertyCreate and PropertyUpdate - now imported from app.schemas.property
 
 @app.get("/properties/")
 @app.options("/properties/")
@@ -2214,104 +2553,6 @@ async def get_property_ai_analysis(property_id: int):
 
 # ==================== CAMPAIGN MANAGEMENT ENDPOINTS ====================
 
-class CampaignCreate(BaseModel):
-    """Campaign creation request model - all fields required as per spec"""
-    # Basic campaign information
-    name: str
-    campaign_type: str
-    channel: List[str]
-    budget: float
-    scheduled_at: str
-    subject_line: str
-    email_content: str
-    use_ai_personalization: bool
-    status: str
-
-    # Geographic scope (for general campaigns)
-    geographic_scope_type: str
-    # Accept either a comma-separated string or a list of strings
-    geographic_scope_values: "Union[str, List[str]]"
-
-    # Basic property filters
-    location: str
-    property_type: str
-    minimum_equity: float
-    min_price: float
-    max_price: float
-    distress_indicators: List[str]
-
-    # Buyer Finder - Demographic Details
-    last_qualification: str
-    age_range: str
-    ethnicity: str
-    salary_range: str
-    marital_status: str
-    employment_status: str
-    home_ownership_status: str
-
-    # Buyer Finder - Geographic Details
-    buyer_country: str
-    buyer_state: str
-    buyer_counties: str
-    buyer_city: str
-    buyer_districts: str
-    buyer_parish: str
-
-    # Seller Finder - Geographic Details
-    seller_country: str
-    seller_state: str
-    seller_counties: str
-    seller_city: str
-    seller_districts: str
-    seller_parish: str
-
-    # Seller Finder - Additional Fields
-    property_year_built_min: str
-    property_year_built_max: str
-    seller_keywords: str
-
-class CampaignUpdate(BaseModel):
-    """Campaign update request model - all fields optional for partial updates"""
-    name: Optional[str] = None
-    campaign_type: Optional[str] = None
-    channel: Optional[str] = None
-    budget: Optional[float] = None
-    scheduled_at: Optional[str] = None
-    subject_line: Optional[str] = None
-    email_content: Optional[str] = None
-    use_ai_personalization: Optional[bool] = None
-    status: Optional[str] = None
-    geographic_scope_type: Optional[str] = None
-    geographic_scope_values: Optional[List[str]] = None
-    location: Optional[str] = None
-    property_type: Optional[str] = None
-    minimum_equity: Optional[float] = None
-    min_price: Optional[float] = None
-    max_price: Optional[float] = None
-    distress_indicators: Optional[List[str]] = None
-    last_qualification: Optional[str] = None
-    age_range: Optional[str] = None
-    ethnicity: Optional[str] = None
-    salary_range: Optional[str] = None
-    marital_status: Optional[str] = None
-    employment_status: Optional[str] = None
-    home_ownership_status: Optional[str] = None
-    buyer_country: Optional[str] = None
-    buyer_state: Optional[str] = None
-    buyer_counties: Optional[str] = None
-    buyer_city: Optional[str] = None
-    buyer_districts: Optional[str] = None
-    buyer_parish: Optional[str] = None
-    seller_country: Optional[str] = None
-    seller_state: Optional[str] = None
-    seller_counties: Optional[str] = None
-    seller_city: Optional[str] = None
-    seller_districts: Optional[str] = None
-    seller_parish: Optional[str] = None
-    property_year_built_min: Optional[str] = None
-    property_year_built_max: Optional[str] = None
-    seller_keywords: Optional[str] = None
-
 @app.get("/campaigns/")
 @app.options("/campaigns/")
 async def get_campaigns():
@@ -2486,8 +2727,210 @@ async def get_overall_accuracy_direct():
         }
     }
 
-@app.get("/recent")
-@app.options("/recent")
+# ==================== API V1 CAMPAIGN ENDPOINTS ====================
+
+@app.get("/api/v1/campaigns/")
+async def get_campaigns_v1(
+    skip: int = Query(0, ge=0, description="skip"),
+    limit: int = Query(100, ge=1, le=1000, description="limit"),
+    search: Optional[str] = Query(None, description="search"),
+    status: Optional[str] = Query(None, description="status"),
+    channel: Optional[str] = Query(None, description="channel")
+):
+    """Get list of campaigns with filtering and pagination"""
+    return {
+        "campaigns": [
+            {
+                "name": "Q4 Property Marketing Campaign",
+                "campaign_type": "new",
+                "channel": ["email", "sms"],  # Now array of strings
+                "budget": "5000.0",
+                "scheduled_at": "2025-10-15T09:00:00Z",
+                "geographic_scope_type": "zip",
+                "geographic_scope_values": ["90210", "10001"],
+                "location": "Los Angeles, CA",
+                "property_type": "residential",
+                "minimum_equity": "100000.0",
+                "min_price": "250000.0",
+                "max_price": "750000.0",
+                "distress_indicators": ["foreclosure", "short_sale"],
+                "subject_line": "Exclusive Property Investment Opportunities",
+                "email_content": "Discover amazing real estate deals...",
+                "use_ai_personalization": True,
+                "id": 1,
+                "status": "active",
+                "created_at": "2025-10-11T09:26:00Z",
+                "updated_at": "2025-10-11T09:26:00Z"
+            }
+        ],
+        "total": 1,
+        "page": 1,
+        "limit": 100,
+        "has_next": False,
+        "has_prev": False
+    }
+
+@app.post("/api/v1/campaigns/")
+async def create_campaign_v1(
+    campaign_data: CampaignCreate,
+    func: str = Query(..., description="func")
+):
+    """Create a new campaign"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        # Basic campaign information
+        "name": campaign_data.name,
+        "campaign_type": campaign_data.campaign_type,
+        "channel": campaign_data.channel,
+        "budget": str(campaign_data.budget),
+        "scheduled_at": campaign_data.scheduled_at,
+        "subject_line": campaign_data.subject_line,
+        "email_content": campaign_data.email_content,
+        "use_ai_personalization": campaign_data.use_ai_personalization,
+        "status": campaign_data.status,
+        "id": 1,
+        "created_at": now,
+        "updated_at": now,
+        
+        # Geographic scope
+        "geographic_scope_type": campaign_data.geographic_scope_type,
+        "geographic_scope_values": campaign_data.geographic_scope_values,
+        
+        # Basic property filters
+        "location": campaign_data.location,
+        "property_type": campaign_data.property_type,
+        "minimum_equity": str(campaign_data.minimum_equity),
+        "min_price": str(campaign_data.min_price),
+        "max_price": str(campaign_data.max_price),
+        "distress_indicators": campaign_data.distress_indicators,
+        
+        # Buyer Finder - Demographic Details
+        "last_qualification": campaign_data.last_qualification,
+        "age_range": campaign_data.age_range,
+        "ethnicity": campaign_data.ethnicity,
+        "salary_range": campaign_data.salary_range,
+        "marital_status": campaign_data.marital_status,
+        "employment_status": campaign_data.employment_status,
+        "home_ownership_status": campaign_data.home_ownership_status,
+        
+        # Buyer Finder - Geographic Details
+        "buyer_country": campaign_data.buyer_country,
+        "buyer_state": campaign_data.buyer_state,
+        "buyer_counties": campaign_data.buyer_counties,
+        "buyer_city": campaign_data.buyer_city,
+        "buyer_districts": campaign_data.buyer_districts,
+        "buyer_parish": campaign_data.buyer_parish,
+        
+        # Seller Finder - Geographic Details
+        "seller_country": campaign_data.seller_country,
+        "seller_state": campaign_data.seller_state,
+        "seller_counties": campaign_data.seller_counties,
+        "seller_city": campaign_data.seller_city,
+        "seller_districts": campaign_data.seller_districts,
+        "seller_parish": campaign_data.seller_parish,
+        
+        # Seller Finder - Additional Fields
+        "property_year_built_min": str(campaign_data.property_year_built_min) if campaign_data.property_year_built_min else None,
+        "property_year_built_max": str(campaign_data.property_year_built_max) if campaign_data.property_year_built_max else None,
+        "seller_keywords": campaign_data.seller_keywords
+    }
+
+@app.get("/api/v1/campaigns/{campaign_id}")
+async def get_campaign_v1(campaign_id: int = PathParam(..., description="campaign_id")):
+    """Get specific campaign by ID"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return {
+        "name": "Sample Campaign",
+        "campaign_type": "new",
+        "channel": ["email", "push"],  # Now array of strings
+        "budget": "5000.0",
+        "scheduled_at": now,
+        "geographic_scope_type": "zip",
+        "geographic_scope_values": ["90210"],
+        "location": "Los Angeles, CA",
+        "property_type": "residential",
+        "minimum_equity": "100000.0",
+        "min_price": "250000.0",
+        "max_price": "750000.0",
+        "distress_indicators": ["foreclosure"],
+        "subject_line": "Sample Subject",
+        "email_content": "Sample content",
+        "use_ai_personalization": True,
+        "id": campaign_id,
+        "status": "active",
+        "created_at": now,
+        "updated_at": now
+    }
+
+@app.put("/api/v1/campaigns/{campaign_id}", response_model=CampaignResponse)
+async def update_campaign_v1(
+    campaign_id: int = PathParam(..., description="campaign_id"),
+    campaign_data: CampaignUpdate = None,
+    func: str = Query(..., description="func")
+):
+    """Update an existing campaign"""
+    from datetime import datetime, timezone
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    return CampaignResponse(
+        name=campaign_data.name if campaign_data.name else "Updated Campaign",
+        campaign_type=campaign_data.campaign_type if campaign_data.campaign_type else "new",
+        channel=campaign_data.channel if campaign_data.channel else "email",
+        budget=str(campaign_data.budget) if campaign_data.budget else "5000.0",
+        scheduled_at=campaign_data.scheduled_at if campaign_data.scheduled_at else now,
+        geographic_scope_type=campaign_data.geographic_scope_type if campaign_data.geographic_scope_type else "zip",
+        geographic_scope_values=campaign_data.geographic_scope_values if campaign_data.geographic_scope_values else [],
+        location=campaign_data.location if campaign_data.location else "Los Angeles, CA",
+        property_type=campaign_data.property_type if campaign_data.property_type else "residential",
+        minimum_equity=str(campaign_data.minimum_equity) if campaign_data.minimum_equity else "100000.0",
+        min_price=str(campaign_data.min_price) if campaign_data.min_price else "250000.0",
+        max_price=str(campaign_data.max_price) if campaign_data.max_price else "750000.0",
+        distress_indicators=campaign_data.distress_indicators if campaign_data.distress_indicators else [],
+        subject_line=campaign_data.subject_line if campaign_data.subject_line else "Updated Subject",
+        email_content=campaign_data.email_content if campaign_data.email_content else "Updated content",
+        use_ai_personalization=campaign_data.use_ai_personalization if campaign_data.use_ai_personalization is not None else True,
+        id=campaign_id,
+        status="active",
+        created_at=now,
+        updated_at=now
+    )
+
+@app.delete("/api/v1/campaigns/{campaign_id}")
+async def delete_campaign_v1(
+    campaign_id: int = PathParam(..., description="campaign_id"),
+    func: str = Query(..., description="func")
+):
+    """Delete a campaign"""
+    return "Campaign deleted successfully"
+
+@app.post("/api/v1/campaigns/{campaign_id}/start")
+async def start_campaign_v1(
+    campaign_id: int = PathParam(..., description="campaign_id"),
+    func: str = Query(..., description="func")
+):
+    """Start a campaign"""
+    return "Campaign started successfully"
+
+@app.post("/api/v1/campaigns/{campaign_id}/pause")
+async def pause_campaign_v1(
+    campaign_id: int = PathParam(..., description="campaign_id"),
+    func: str = Query(..., description="func")
+):
+    """Pause a campaign"""
+    return "Campaign paused successfully"
+
+@app.get("/api/v1/campaigns/{campaign_id}/performance")
+async def get_campaign_performance_v1(campaign_id: int = PathParam(..., description="campaign_id")):
+    """Get campaign performance metrics"""
+    return "Campaign performance: 150 emails sent, 45 opened, 12 clicked, 3 converted"
+
 @app.get("/recent/")
 @app.options("/recent/")
 async def get_recent_direct():

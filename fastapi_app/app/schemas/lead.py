@@ -7,6 +7,83 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from decimal import Decimal
 
+class LeadResponse(BaseModel):
+    """Lead response model"""
+    name: str
+    email: str
+    phone: str
+    address: str
+    city: str
+    state: str
+    zipcode: str
+    status: str
+    source: str
+    motivation_score: int
+    property_condition: str
+    financial_situation: str
+    timeline_urgency: str
+    negotiation_style: str
+    notes: str
+    id: int
+    campaign_id: int
+    created_at: str
+    updated_at: str
+
+class LeadCreateRequest(BaseModel):
+    """Lead creation request model"""
+    name: str
+    email: str
+    phone: str
+    address: str
+    city: str
+    state: str
+    zipcode: str
+    status: str = "new"
+    source: str = "manual"
+    motivation_score: int = 0
+    property_condition: str
+    financial_situation: str
+    timeline_urgency: str
+    negotiation_style: str
+    notes: str
+    campaign_id: int
+
+class LeadUpdateRequest(BaseModel):
+    """Lead update request model"""
+    name: str
+    email: str
+    phone: str
+    address: str
+    city: str
+    state: str
+    zipcode: str
+    status: str
+    source: str
+    motivation_score: int
+    property_condition: str
+    financial_situation: str
+    timeline_urgency: str
+    negotiation_style: str
+    notes: str
+
+class DiscoveredLeadResponse(BaseModel):
+    """Discovered lead response model"""
+    owner_name: str
+    address: str
+    city: str
+    state: str
+    zipcode: str
+    source: str
+    details: str
+    motivation_score: int
+    property_condition: str
+    financial_situation: str
+    timeline_urgency: str
+    negotiation_style: str
+    id: int
+    created_at: str
+    updated_at: str
+
 class LeadBase(BaseModel):
     """Base lead schema"""
     name: str
