@@ -8,6 +8,7 @@ import django
 from pathlib import Path
 from decimal import Decimal
 from datetime import datetime, timedelta
+from django.utils import timezone
 from typing import Dict, List, Any, Optional
 from asgiref.sync import sync_to_async
 
@@ -28,27 +29,27 @@ from deelflow.models import (
     DiscoveredLead, OutreachCampaign, CampaignRecipient
 )
 
-def _get_dashboard_stats_sync() -> Dict[str, Any]:
-    """Synchronous version of get_dashboard_stats"""
+async def _get_dashboard_stats_sync() -> Dict[str, Any]:
+    """Async version of get_dashboard_stats"""
     try:
         # Get counts from database
-        total_properties = Property.objects.count()
-        total_leads = Lead.objects.count()
-        total_deals = Deal.objects.count()
-        total_users = User.objects.count()
+        total_properties = await sync_to_async(Property.objects.count)()
+        total_leads = await sync_to_async(Lead.objects.count)()
+        total_deals = await sync_to_async(Deal.objects.count)()
+        total_users = await sync_to_async(User.objects.count)()
         
         # Get recent activity
-        recent_properties = Property.objects.filter(
-            created_at__gte=datetime.now() - timedelta(days=30)
-        ).count()
+        recent_properties = await sync_to_async(Property.objects.filter(
+            created_at__gte=timezone.now() - timedelta(days=30)
+        ).count)()
         
-        recent_leads = Lead.objects.filter(
-            created_at__gte=datetime.now() - timedelta(days=30)
-        ).count()
+        recent_leads = await sync_to_async(Lead.objects.filter(
+            created_at__gte=timezone.now() - timedelta(days=30)
+        ).count)()
         
-        recent_deals = Deal.objects.filter(
-            created_at__gte=datetime.now() - timedelta(days=30)
-        ).count()
+        recent_deals = await sync_to_async(Deal.objects.filter(
+            created_at__gte=timezone.now() - timedelta(days=30)
+        ).count)()
         
         return {
             "totalProperties": total_properties,
@@ -58,7 +59,7 @@ def _get_dashboard_stats_sync() -> Dict[str, Any]:
             "recentProperties": recent_properties,
             "recentLeads": recent_leads,
             "recentDeals": recent_deals,
-            "lastUpdated": datetime.now().isoformat()
+            "lastUpdated": timezone.now().isoformat()
         }
     except Exception as e:
         print(f"Error getting dashboard stats: {e}")
@@ -70,11 +71,11 @@ def _get_dashboard_stats_sync() -> Dict[str, Any]:
             "recentProperties": 0,
             "recentLeads": 0,
             "recentDeals": 0,
-            "lastUpdated": datetime.now().isoformat()
+            "lastUpdated": timezone.now().isoformat()
         }
 
 # Async wrapper
-get_dashboard_stats = sync_to_async(_get_dashboard_stats_sync)
+get_dashboard_stats = _get_dashboard_stats_sync
 
 def _get_ai_metrics_sync() -> Dict[str, Any]:
     """Synchronous version of get_ai_metrics"""
@@ -98,7 +99,7 @@ def _get_ai_metrics_sync() -> Dict[str, Any]:
             "nlpAnalyses": nlp_analyses,
             "blockchainTxns": blockchain_txns,
             "avgAccuracy": avg_accuracy,
-            "lastUpdated": datetime.now().isoformat()
+            "lastUpdated": timezone.now().isoformat()
         }
     except Exception as e:
         print(f"Error getting AI metrics: {e}")
@@ -110,7 +111,7 @@ def _get_ai_metrics_sync() -> Dict[str, Any]:
             "nlpAnalyses": 0,
             "blockchainTxns": 0,
             "avgAccuracy": 0,
-            "lastUpdated": datetime.now().isoformat()
+            "lastUpdated": timezone.now().isoformat()
         }
 
 # Async wrapper
@@ -121,7 +122,8 @@ def _get_tenant_management_data_sync() -> Dict[str, Any]:
     try:
         # Get organization data
         total_organizations = Organization.objects.count()
-        active_organizations = Organization.objects.filter(is_active=True).count()
+        # Use subscription_status to determine active organizations
+        active_organizations = Organization.objects.exclude(subscription_status='suspended').count()
         
         # Mock tenant data (since we don't have tenant model yet)
         return {
@@ -155,11 +157,11 @@ def _get_opportunity_cost_data_sync() -> Dict[str, Any]:
         potential_revenue = sum([deal.offer_price or 0 for deal in Deal.objects.filter(status='pending')])
         
         return {
-            "lostRevenue": float(total_revenue * 0.1),  # 10% of closed deals
+            "lostRevenue": float(total_revenue) * 0.1,  # 10% of closed deals
             "lostRevenueDescription": "Revenue lost due to delayed deal closures and missed opportunities",
             "potentialRevenue": float(potential_revenue),
             "currentRevenue": float(total_revenue),
-            "projectedRevenue": float(total_revenue * 1.2),
+            "projectedRevenue": float(total_revenue) * 1.2,
             "optimizationNeeded": "Lead conversion process and property listing strategy",
             "roiConversionEfficiency": 78.5,
             "peakTimeMonths": ["March", "April", "May", "September", "October"],
@@ -186,7 +188,7 @@ def _get_revenue_growth_data_sync() -> Dict[str, Any]:
     """Synchronous version of get_revenue_growth_data"""
     try:
         # Get deal data for last 6 months
-        six_months_ago = datetime.now() - timedelta(days=180)
+        six_months_ago = timezone.now() - timedelta(days=180)
         recent_deals = Deal.objects.filter(
             created_at__gte=six_months_ago,
             status='closed'
@@ -194,19 +196,19 @@ def _get_revenue_growth_data_sync() -> Dict[str, Any]:
         
         monthly_revenue = []
         for i in range(6):
-            month_start = datetime.now() - timedelta(days=30*(i+1))
-            month_end = datetime.now() - timedelta(days=30*i)
+            month_start = timezone.now() - timedelta(days=30*(i+1))
+            month_end = timezone.now() - timedelta(days=30*i)
             month_deals = recent_deals.filter(
                 created_at__gte=month_start,
                 created_at__lt=month_end
             )
-            month_revenue.append(sum([deal.final_price or 0 for deal in month_deals]))
+            monthly_revenue.append(sum([deal.final_price or 0 for deal in month_deals]))
         
         monthly_revenue.reverse()  # Oldest to newest
         
         return {
             "revenueData": [float(r) for r in monthly_revenue],
-            "userData": [User.objects.filter(created_at__gte=datetime.now() - timedelta(days=30*i)).count() for i in range(6, 0, -1)],
+            "userData": [User.objects.filter(created_at__gte=timezone.now() - timedelta(days=30*i)).count() for i in range(6, 0, -1)],
             "labels": ["6m ago", "5m ago", "4m ago", "3m ago", "2m ago", "1m ago"]
         }
     except Exception as e:
@@ -225,7 +227,7 @@ def _get_market_alerts_data_sync() -> List[Dict[str, Any]]:
     try:
         # Get recent property and deal activity
         recent_properties = Property.objects.filter(
-            created_at__gte=datetime.now() - timedelta(days=7)
+            created_at__gte=timezone.now() - timedelta(days=7)
         ).order_by('-created_at')[:5]
         
         alerts = []
@@ -253,7 +255,7 @@ def _get_live_activity_data_sync() -> List[Dict[str, Any]]:
         
         # Recent properties
         recent_properties = Property.objects.filter(
-            created_at__gte=datetime.now() - timedelta(hours=24)
+            created_at__gte=timezone.now() - timedelta(hours=24)
         ).order_by('-created_at')[:3]
         
         for prop in recent_properties:
@@ -266,7 +268,7 @@ def _get_live_activity_data_sync() -> List[Dict[str, Any]]:
         
         # Recent deals
         recent_deals = Deal.objects.filter(
-            created_at__gte=datetime.now() - timedelta(hours=24)
+            created_at__gte=timezone.now() - timedelta(hours=24)
         ).order_by('-created_at')[:2]
         
         for deal in recent_deals:
@@ -299,7 +301,7 @@ def _get_performance_metrics_sync() -> Dict[str, Any]:
                 "aiConversations": business_metrics.ai_conversations or 0,
                 "conversionRate": float(business_metrics.conversion_rate or 0),
                 "avgDealSize": float(business_metrics.avg_deal_size or 0),
-                "lastUpdated": datetime.now().isoformat()
+                "lastUpdated": timezone.now().isoformat()
             }
         else:
             return {
@@ -309,7 +311,7 @@ def _get_performance_metrics_sync() -> Dict[str, Any]:
                 "aiConversations": 0,
                 "conversionRate": 0.0,
                 "avgDealSize": 0.0,
-                "lastUpdated": datetime.now().isoformat()
+                "lastUpdated": timezone.now().isoformat()
             }
     except Exception as e:
         print(f"Error getting performance metrics: {e}")
@@ -320,7 +322,7 @@ def _get_performance_metrics_sync() -> Dict[str, Any]:
             "aiConversations": 0,
             "conversionRate": 0.0,
             "avgDealSize": 0.0,
-            "lastUpdated": datetime.now().isoformat()
+            "lastUpdated": timezone.now().isoformat()
         }
 
 # Async wrapper
