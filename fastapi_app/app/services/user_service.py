@@ -6,6 +6,7 @@ from typing import List, Optional
 from app.core.security import get_password_hash, verify_password
 from app.schemas.user import UserCreate, UserUpdate
 from app.core.exceptions import NotFoundError, ValidationError
+from asgiref.sync import sync_to_async
 import logging
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ class UserService:
     async def get_user_by_id(self, user_id: int):
         """Get user by ID"""
         try:
-            return self.django_user_model.objects.get(id=user_id)
+            return await sync_to_async(self.django_user_model.objects.get)(id=user_id)
         except self.django_user_model.DoesNotExist:
             return None
         except Exception as e:
@@ -44,7 +45,7 @@ class UserService:
     async def get_user_by_email(self, email: str):
         """Get user by email"""
         try:
-            return self.django_user_model.objects.get(email=email)
+            return await sync_to_async(self.django_user_model.objects.get)(email=email)
         except self.django_user_model.DoesNotExist:
             return None
         except Exception as e:
@@ -71,10 +72,10 @@ class UserService:
             # Get organization if provided
             organization = None
             if user_data.organization_id:
-                organization = self.django_organization_model.objects.get(id=user_data.organization_id)
+                organization = await sync_to_async(self.django_organization_model.objects.get)(id=user_data.organization_id)
             
             # Create user
-            user = self.django_user_model.objects.create(
+            user = await sync_to_async(self.django_user_model.objects.create)(
                 email=user_data.email,
                 password=hashed_password,
                 first_name=user_data.first_name,
@@ -103,7 +104,7 @@ class UserService:
             for field, value in update_data.items():
                 setattr(user, field, value)
             
-            user.save()
+            await sync_to_async(user.save)()
             return user
         except Exception as e:
             logger.error(f"Error updating user: {e}")
@@ -116,7 +117,7 @@ class UserService:
             if not user:
                 raise NotFoundError("User not found")
             
-            user.delete()
+            await sync_to_async(user.delete)()
         except Exception as e:
             logger.error(f"Error deleting user: {e}")
             raise
@@ -125,6 +126,8 @@ class UserService:
                        role: str = None, organization_id: int = None):
         """Get users with filtering and pagination"""
         try:
+            from django.db import models
+            
             queryset = self.django_user_model.objects.all()
             
             # Apply filters
@@ -142,7 +145,7 @@ class UserService:
                 queryset = queryset.filter(organization_id=organization_id)
             
             # Apply pagination
-            return queryset[skip:skip + limit]
+            return await sync_to_async(list)(queryset[skip:skip + limit])
         except Exception as e:
             logger.error(f"Error getting users: {e}")
             raise
@@ -156,7 +159,7 @@ class UserService:
             
             # Get user's role
             if user.role:
-                role = self.django_role_model.objects.get(name=user.role)
+                role = await sync_to_async(self.django_role_model.objects.get)(name=user.role)
                 return [role]
             
             return []
@@ -171,9 +174,9 @@ class UserService:
             if not user:
                 raise NotFoundError("User not found")
             
-            role = self.django_role_model.objects.get(id=role_id)
+            role = await sync_to_async(self.django_role_model.objects.get)(id=role_id)
             user.role = role.name
-            user.save()
+            await sync_to_async(user.save)()
         except Exception as e:
             logger.error(f"Error assigning role: {e}")
             raise
@@ -186,22 +189,22 @@ class UserService:
                 raise NotFoundError("User not found")
             
             user.role = "user"  # Default role
-            user.save()
+            await sync_to_async(user.save)()
         except Exception as e:
             logger.error(f"Error removing role: {e}")
             raise
     
-    def has_permission(self, user, permission_name: str) -> bool:
+    async def has_permission(self, user, permission_name: str) -> bool:
         """Check if user has specific permission"""
         try:
             if not user or not user.role:
                 return False
             
             # Get user's role
-            role = self.django_role_model.objects.get(name=user.role)
+            role = await sync_to_async(self.django_role_model.objects.get)(name=user.role)
             
             # Check if role has permission
-            return role.permissions.filter(name=permission_name).exists()
+            return await sync_to_async(role.permissions.filter(name=permission_name).exists)()
         except Exception as e:
             logger.error(f"Error checking permission: {e}")
             return False

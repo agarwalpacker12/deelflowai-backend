@@ -1,9 +1,8 @@
 {
   "status": "commited",
-  "type": "backend",
+  "type": "frontend",
   "scope": "codebase",
   "localEndpoint": "http://localhost:8140",
-  "backendAuthType": "basic token",
-  "backendUsername": "arpansarkar@gmail.com",
-  "backendPassword": "arpan051992"
+  "loginUser": "admin@deelflowai.com",
+  "loginPassword": "password123"
 }
