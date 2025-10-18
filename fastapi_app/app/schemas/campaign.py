@@ -59,8 +59,8 @@ class CampaignCreate(BaseModel):
     seller_parish: str = ""
     
     # Seller Finder - Additional Fields
-    property_year_built_min: Optional[int] = None
-    property_year_built_max: Optional[int] = None
+    property_year_built_min: Optional[Union[int, str]] = None
+    property_year_built_max: Optional[Union[int, str]] = None
     seller_keywords: str = ""
 
 class CampaignUpdate(BaseModel):
@@ -114,8 +114,8 @@ class CampaignUpdate(BaseModel):
     seller_parish: Optional[str] = None
     
     # Seller Finder - Additional Fields
-    property_year_built_min: Optional[int] = None
-    property_year_built_max: Optional[int] = None
+    property_year_built_min: Optional[Union[int, str]] = None
+    property_year_built_max: Optional[Union[int, str]] = None
     seller_keywords: Optional[str] = None
 
 class CampaignResponse(BaseModel):
@@ -172,8 +172,8 @@ class CampaignResponse(BaseModel):
     seller_parish: str = ""
     
     # Seller Finder - Additional Fields
-    property_year_built_min: Optional[str] = None
-    property_year_built_max: Optional[str] = None
+    property_year_built_min: Optional[Union[int, str]] = None
+    property_year_built_max: Optional[Union[int, str]] = None
     seller_keywords: str = ""
 
 class CampaignListResponse(BaseModel):
@@ -223,8 +223,8 @@ class CampaignBase(BaseModel):
     seller_city: str
     seller_districts: str
     seller_parish: str
-    property_year_built_min: str
-    property_year_built_max: str
+    property_year_built_min: Optional[str] = None
+    property_year_built_max: Optional[str] = None
     seller_keywords: str
 
 class CampaignResponse(CampaignBase):

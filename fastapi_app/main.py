@@ -1541,8 +1541,8 @@ async def create_campaign(campaign_data: CampaignCreate):
             seller_districts=campaign_data.seller_districts,
             seller_parish=campaign_data.seller_parish,
             # Seller Finder - Additional Fields
-            property_year_built_min=campaign_data.property_year_built_min,
-            property_year_built_max=campaign_data.property_year_built_max,
+            property_year_built_min=int(campaign_data.property_year_built_min) if campaign_data.property_year_built_min and str(campaign_data.property_year_built_min).strip() != "" else None,
+            property_year_built_max=int(campaign_data.property_year_built_max) if campaign_data.property_year_built_max and str(campaign_data.property_year_built_max).strip() != "" else None,
             seller_keywords=campaign_data.seller_keywords,
             # Buyer Finder - Geographic Details
             buyer_country=campaign_data.buyer_country,
