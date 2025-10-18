@@ -20,9 +20,10 @@ class CampaignCreate(BaseModel):
     use_ai_personalization: bool = False
     status: str = "active"
     
-    # Geographic scope (for general campaigns)
+    # Geographic scope (for general campaigns) - support both formats
     geographic_scope_type: str = "zip"
     geographic_scope_values: List[str] = []
+    geographic_scope: Optional[Dict[str, Any]] = None  # Support object format from frontend
     
     # Basic property filters
     location: str

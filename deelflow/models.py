@@ -266,8 +266,39 @@ class Campaign(models.Model):
     # AI Features
     use_ai_personalization = models.BooleanField(default=False)
 
+    # Seller Finder - Geographic Details
+    seller_country = models.CharField(max_length=100, blank=True, null=True)
+    seller_state = models.CharField(max_length=100, blank=True, null=True)
+    seller_counties = models.CharField(max_length=100, blank=True, null=True)
+    seller_city = models.CharField(max_length=100, blank=True, null=True)
+    seller_districts = models.CharField(max_length=100, blank=True, null=True)
+    seller_parish = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Seller Finder - Additional Fields
+    property_year_built_min = models.IntegerField(null=True, blank=True)
+    property_year_built_max = models.IntegerField(null=True, blank=True)
+    seller_keywords = models.CharField(max_length=500, blank=True, null=True)
+    
+    # Buyer Finder - Geographic Details
+    buyer_country = models.CharField(max_length=100, blank=True, null=True)
+    buyer_state = models.CharField(max_length=100, blank=True, null=True)
+    buyer_counties = models.CharField(max_length=100, blank=True, null=True)
+    buyer_city = models.CharField(max_length=100, blank=True, null=True)
+    buyer_districts = models.CharField(max_length=100, blank=True, null=True)
+    buyer_parish = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Buyer Finder - Demographic Details
+    last_qualification = models.CharField(max_length=100, blank=True, null=True)
+    age_range = models.CharField(max_length=50, blank=True, null=True)
+    ethnicity = models.CharField(max_length=100, blank=True, null=True)
+    salary_range = models.CharField(max_length=100, blank=True, null=True)
+    marital_status = models.CharField(max_length=50, blank=True, null=True)
+    employment_status = models.CharField(max_length=100, blank=True, null=True)
+    home_ownership_status = models.CharField(max_length=100, blank=True, null=True)
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name

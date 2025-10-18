@@ -35,7 +35,7 @@ def get_subscription_packages(request):
                 'interval': package.interval
             })
         
-    return Response({
+        return Response({
             'status': 'success',
             'packages': package_data
         })
@@ -88,7 +88,7 @@ def create_checkout_session(request):
             'message': 'Package not found'
         }, status=404)
     except Exception as e:
-    return Response({
+        return Response({
             'status': 'error',
             'message': str(e)
         }, status=400)
@@ -162,7 +162,7 @@ def stripe_webhook(request):
 def get_user_subscription(request):
     """Get current user's subscription details"""
     if not request.user.is_authenticated:
-    return Response({
+        return Response({
             'status': 'error',
             'message': 'User not authenticated'
         }, status=401)
