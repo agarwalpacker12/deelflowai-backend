@@ -1457,22 +1457,72 @@ async def get_campaigns():
 async def create_campaign(campaign_data: CampaignCreate):
     """Create a new campaign - Frontend compatible endpoint"""
     try:
+        print("=== CAMPAIGN CREATION DEBUG ===")
+        print(f"Received campaign_data: {campaign_data}")
+        
         from deelflow.models import Campaign
+        print("✓ Django Campaign model imported successfully")
         
         # Convert channel to string if it's a list
         channel = campaign_data.channel
         if isinstance(channel, list):
             channel = channel[0] if channel else "email"
+        print(f"✓ Channel processed: {channel}")
+        
+        # Handle geographic scope - support both object and separate field formats
+        geographic_scope_type = campaign_data.geographic_scope_type
+        geographic_scope_values = campaign_data.geographic_scope_values
+        
+        # If geographic_scope object is provided, extract type and values from it
+        if campaign_data.geographic_scope:
+            geographic_scope_type = campaign_data.geographic_scope.get("type", geographic_scope_type)
+            if "counties" in campaign_data.geographic_scope:
+                geographic_scope_values = campaign_data.geographic_scope["counties"]
+            elif "cities" in campaign_data.geographic_scope:
+                geographic_scope_values = campaign_data.geographic_scope["cities"]
+            elif "states" in campaign_data.geographic_scope:
+                geographic_scope_values = campaign_data.geographic_scope["states"]
+            elif "zipcodes" in campaign_data.geographic_scope:
+                geographic_scope_values = campaign_data.geographic_scope["zipcodes"]
+        print(f"✓ Geographic scope processed: type={geographic_scope_type}, values={geographic_scope_values}")
+        
+        # Parse scheduled_at string to datetime
+        from datetime import datetime
+        scheduled_at = None
+        if campaign_data.scheduled_at:
+            try:
+                # Handle different datetime formats
+                scheduled_str = campaign_data.scheduled_at
+                if 'T' in scheduled_str and not scheduled_str.endswith('Z'):
+                    scheduled_at = datetime.fromisoformat(scheduled_str)
+                else:
+                    scheduled_at = datetime.fromisoformat(scheduled_str.replace('Z', '+00:00'))
+                print(f"✓ Scheduled_at parsed successfully: {scheduled_at}")
+            except ValueError as e:
+                print(f"Error parsing scheduled_at: {e}")
+                scheduled_at = None
+        else:
+            print("✓ No scheduled_at provided")
         
         # Create campaign in Django database
-        campaign = await sync_to_async(Campaign.objects.create)(
+        try:
+            # Test if the issue is with sync_to_async
+            print("About to create campaign...")
+            print("Creating campaign with data:")
+            print(f"  - name: {campaign_data.name}")
+            print(f"  - scheduled_at: {scheduled_at}")
+            print(f"  - channel: {channel}")
+            
+            from django.utils import timezone
+            campaign = await sync_to_async(Campaign.objects.create)(
             name=campaign_data.name,
             campaign_type=campaign_data.campaign_type,
             channel=channel,
             budget=campaign_data.budget,
-            scheduled_at=campaign_data.scheduled_at,
-            geographic_scope_type=campaign_data.geographic_scope_type,
-            geographic_scope_values=str(campaign_data.geographic_scope_values) if campaign_data.geographic_scope_values else "[]",
+            scheduled_at=scheduled_at,
+            updated_at=timezone.now(),
+            geographic_scope_type=geographic_scope_type,
+            geographic_scope_values=str(geographic_scope_values) if geographic_scope_values else "[]",
             location=campaign_data.location,
             property_type=campaign_data.property_type,
             minimum_equity=campaign_data.minimum_equity,
@@ -1482,9 +1532,45 @@ async def create_campaign(campaign_data: CampaignCreate):
             subject_line=campaign_data.subject_line,
             email_content=campaign_data.email_content,
             use_ai_personalization=campaign_data.use_ai_personalization,
-            status=campaign_data.status
-        )
+            status=campaign_data.status,
+            # Seller Finder - Geographic Details
+            seller_country=campaign_data.seller_country,
+            seller_state=campaign_data.seller_state,
+            seller_counties=campaign_data.seller_counties,
+            seller_city=campaign_data.seller_city,
+            seller_districts=campaign_data.seller_districts,
+            seller_parish=campaign_data.seller_parish,
+            # Seller Finder - Additional Fields
+            property_year_built_min=campaign_data.property_year_built_min,
+            property_year_built_max=campaign_data.property_year_built_max,
+            seller_keywords=campaign_data.seller_keywords,
+            # Buyer Finder - Geographic Details
+            buyer_country=campaign_data.buyer_country,
+            buyer_state=campaign_data.buyer_state,
+            buyer_counties=campaign_data.buyer_counties,
+            buyer_city=campaign_data.buyer_city,
+            buyer_districts=campaign_data.buyer_districts,
+            buyer_parish=campaign_data.buyer_parish,
+            # Buyer Finder - Demographic Details
+            last_qualification=campaign_data.last_qualification,
+            age_range=campaign_data.age_range,
+            ethnicity=campaign_data.ethnicity,
+            salary_range=campaign_data.salary_range,
+            marital_status=campaign_data.marital_status,
+            employment_status=campaign_data.employment_status,
+            home_ownership_status=campaign_data.home_ownership_status
+            )
+            print("✓ Campaign created successfully in database")
+        except Exception as db_error:
+            print(f"✗ Database error: {str(db_error)}")
+            import traceback
+            print(f"Database error traceback: {traceback.format_exc()}")
+            return {
+                "status": "error",
+                "message": f"Database error: {str(db_error)}"
+            }
         
+        print("✓ Preparing response...")
         return {
             "status": "success",
             "message": "Campaign created successfully",
@@ -1494,19 +1580,21 @@ async def create_campaign(campaign_data: CampaignCreate):
                 "campaign_type": campaign.campaign_type,
                 "channel": campaign.channel,
                 "budget": float(campaign.budget) if campaign.budget else None,
-                "scheduled_at": campaign.scheduled_at.isoformat() if campaign.scheduled_at else None,
+                "scheduled_at": str(campaign.scheduled_at) if campaign.scheduled_at else None,
                 "subject_line": campaign.subject_line,
                 "email_content": campaign.email_content,
                 "use_ai_personalization": campaign.use_ai_personalization,
                 "status": campaign.status,
-                "created_at": campaign.created_at.isoformat(),
-                "updated_at": campaign.updated_at.isoformat()
+                "created_at": str(campaign.created_at),
+                "updated_at": str(campaign.updated_at)
             }
         }
     except Exception as e:
+        import traceback
         return {
             "status": "error",
-            "message": f"Failed to create campaign: {str(e)}"
+            "message": f"Failed to create campaign: {str(e)}",
+            "traceback": traceback.format_exc()
         }
 
 @app.get("/campaigns/{campaign_id}/", tags=["Campaigns"])

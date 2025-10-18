@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     
     class Config:
         case_sensitive = True
-        env_file = ".env"
+        env_file = ".env" if os.path.exists(".env") else None
+        env_file_encoding = "utf-8"
 
 settings = Settings()
