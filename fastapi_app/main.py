@@ -1695,9 +1695,9 @@ async def delete_campaign(campaign_id: int):
         await sync_to_async(campaign.delete)()
         
         return {
-        "status": "success",
-        "message": "Campaign deleted successfully"
-    }
+            "status": "success",
+            "message": "Campaign deleted successfully"
+        }
     except Campaign.DoesNotExist:
         return {
             "status": "error",
