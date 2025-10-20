@@ -17,6 +17,7 @@ import datetime
 from pathlib import Path
 from asgiref.sync import sync_to_async
 from django.utils import timezone
+import ast
 
 # Import schemas from their respective files
 from app.schemas.campaign import CampaignCreate, CampaignUpdate, CampaignResponse, CampaignListResponse
@@ -365,8 +366,8 @@ async def get_active_users():
     try:
         db_stats = await get_dashboard_stats()
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "active_users": db_stats['totalUsers'],
                 "change_percentage": 8.3,  # Frontend expects this field name
                 "new_users_this_month": 15,
@@ -385,8 +386,8 @@ async def get_properties_listed():
     try:
         db_stats = await get_dashboard_stats()
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "properties_listed": db_stats['totalProperties'],
                 "change_percentage": 15.2,  # Frontend expects this field name
                 "new_listings_this_month": 8,
@@ -405,8 +406,8 @@ async def get_ai_conversations():
     try:
         db_stats = await get_dashboard_stats()
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "ai_conversations": 1250,  # Mock data
                 "change_percentage": 87.5,  # Frontend expects this field name
                 "successful_interactions": 1094,
@@ -425,8 +426,8 @@ async def get_total_deals():
     try:
         db_stats = await get_dashboard_stats()
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "total_deals": db_stats['totalDeals'],
                 "change_percentage": 22.1,  # Frontend expects this field name
                 "closed_deals_this_month": 12,
@@ -445,8 +446,8 @@ async def get_monthly_profit():
     try:
         db_stats = await get_dashboard_stats()
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "monthly_profit": 45000.00,
                 "change_percentage": 18.7,  # Frontend expects this field name
                 "profit_margin": 35.2,
@@ -465,8 +466,8 @@ async def get_voice_calls_count():
     try:
         db_stats = await get_dashboard_stats()
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "voice_calls": 245,
                 "change_percentage": 87.5,  # Frontend expects this field name
                 "average_duration": 4.2,
@@ -485,8 +486,8 @@ async def get_compliance_status():
     try:
         db_stats = await get_dashboard_stats()
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "compliance_status": "compliant",
                 "audit_score": 94.2,
                 "last_audit": "2025-10-01T00:00:00Z",
@@ -507,8 +508,8 @@ async def get_voice_ai_calls_count():
     try:
         ai_metrics = await get_ai_metrics()
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "total_calls": ai_metrics.get('voiceCalls', 0),
                 "success_rate": 87.5,
                 "average_duration": 4.2
@@ -526,8 +527,8 @@ async def get_vision_analysis():
     try:
         ai_metrics = await get_ai_metrics()
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "total_analyses": ai_metrics.get('visionAnalyses', 0),
                 "accuracy_rate": 89.2,
                 "processing_time": 2.1
@@ -545,8 +546,8 @@ async def get_nlp_processing():
     try:
         ai_metrics = await get_ai_metrics()
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "total_processed": ai_metrics.get('nlpAnalyses', 0),
                 "processing_success_rate": 91.5,
                 "average_processing_time": 1.8
@@ -564,8 +565,8 @@ async def get_blockchain_transactions():
     try:
         ai_metrics = await get_ai_metrics()
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "total_transactions": ai_metrics.get('blockchainTxns', 0),
                 "success_rate": 95.8,
                 "average_processing_time": 3.2
@@ -600,7 +601,7 @@ async def get_tenant_management_stats():
     try:
         tenant_data = await get_tenant_management_data()
         return {
-        "status": "success",
+            "status": "success",
             "data": tenant_data
         }
     except Exception as e:
@@ -615,7 +616,7 @@ async def get_analytics_opportunity_cost():
     try:
         opportunity_data = await get_opportunity_cost_data()
         return {
-        "status": "success",
+            "status": "success",
             "data": opportunity_data
         }
     except Exception as e:
@@ -643,8 +644,8 @@ async def get_analytics_deals():
     try:
         # Mock data for now - replace with actual database calls when ready
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "overview": {
                     "total_deals": 5,
                     "total_properties": 12,
@@ -673,7 +674,7 @@ async def get_analytics_deals():
                 },
                 "deals": [
                     {
-            "id": 1,
+                        "id": 1,
                         "property_address": "123 Main St, Dallas, TX",
                         "offer_price": 150000.0,
                         "status": "active",
@@ -935,8 +936,8 @@ async def get_live_activity_feed():
 async def get_deal_completions_scheduling():
     """Get deal completions scheduling - Frontend expected endpoint"""
     return {
-                "status": "success",
-                "data": {
+        "status": "success",
+        "data": {
             "scheduled_completions": 8,
             "completed_this_month": 12,
             "upcoming_completions": [
@@ -1157,11 +1158,10 @@ async def create_property(property_data: PropertyCreate):
             seller_notes=property_data.seller_notes,
             status="active"
         )
-        
         return {
             "status": "success",
             "message": "Property created successfully",
-        "data": {
+            "data": {
                 "id": property.id,
                 "address": property.address,
                 "city": property.city,
@@ -1235,9 +1235,9 @@ async def update_property(property_id: int, property_data: PropertyUpdate):
         await sync_to_async(property.save)()
         
         return {
-        "status": "success",
+            "status": "success",
             "message": "Property updated successfully",
-        "data": {
+            "data": {
                 "id": property.id,
                 "address": property.address,
                 "status": property.status,
@@ -1305,7 +1305,7 @@ async def get_property_ai_analysis(property_id: int):
         }
         
         return {
-        "status": "success",
+            "status": "success",
             "data": ai_analysis
         }
     except Property.DoesNotExist:
@@ -1329,21 +1329,21 @@ async def get_property_saves(params: dict = None):
         
         # For now, return empty list since PropertySave model might not exist
         return {
-        "status": "success",
+            "status": "success",
             "data": [],
             "total": 0,
-        "page": 1,
-        "limit": 20
-    }
+            "page": 1,
+            "limit": 20
+        }
     except Exception as e:
         return {
             "status": "error",
             "message": f"Failed to retrieve property saves: {str(e)}",
             "data": [],
             "total": 0,
-        "page": 1,
-        "limit": 20
-    }
+            "page": 1,
+            "limit": 20
+        }
 
 @app.get("/api/property-saves/{property_save_id}/", tags=["Property Saves"])
 async def get_property_save(property_save_id: int):
@@ -1422,11 +1422,29 @@ async def get_campaigns():
         
         campaign_data = []
         for campaign in campaigns:
+            # Normalize fields stored as strings in DB
+            try:
+                geo_values = campaign.geographic_scope_values
+                if isinstance(geo_values, str):
+                    geo_values = ast.literal_eval(geo_values)
+            except Exception:
+                geo_values = []
+            try:
+                distress = campaign.distress_indicators
+                if isinstance(distress, str):
+                    distress = ast.literal_eval(distress)
+            except Exception:
+                distress = []
+            channel_val = campaign.channel
+            if isinstance(channel_val, list):
+                channel_out = channel_val
+            else:
+                channel_out = [channel_val] if channel_val else []
             campaign_data.append({
                 "id": campaign.id,
                 "name": campaign.name,
                 "campaign_type": campaign.campaign_type,
-                "channel": campaign.channel,
+                "channel": channel_out,
                 "budget": float(campaign.budget) if campaign.budget else None,
                 "scheduled_at": campaign.scheduled_at.isoformat() if campaign.scheduled_at else None,
                 "subject_line": campaign.subject_line,
@@ -1434,13 +1452,13 @@ async def get_campaigns():
                 "use_ai_personalization": campaign.use_ai_personalization,
                 "status": campaign.status,
                 "geographic_scope_type": campaign.geographic_scope_type,
-                "geographic_scope_values": campaign.geographic_scope_values,
+                "geographic_scope_values": geo_values,
                 "location": campaign.location,
                 "property_type": campaign.property_type,
                 "minimum_equity": float(campaign.minimum_equity) if campaign.minimum_equity else None,
                 "min_price": float(campaign.min_price) if campaign.min_price else None,
                 "max_price": float(campaign.max_price) if campaign.max_price else None,
-                "distress_indicators": campaign.distress_indicators,
+                "distress_indicators": distress,
                 "created_at": campaign.created_at.isoformat()
             })
         
@@ -1605,49 +1623,7 @@ async def create_campaign(campaign_data: CampaignCreate):
             "traceback": traceback.format_exc()
         }
 
-@app.get("/campaigns/{campaign_id}/", tags=["Campaigns"])
-async def get_campaign(campaign_id: int):
-    """Get a specific campaign by ID - Frontend compatible endpoint"""
-    try:
-        from deelflow.models import Campaign
-        
-        campaign = await sync_to_async(Campaign.objects.get)(id=campaign_id)
-        
-        return {
-            "status": "success",
-            "data": {
-                "id": campaign.id,
-                "name": campaign.name,
-                "campaign_type": campaign.campaign_type,
-                "channel": campaign.channel if isinstance(campaign.channel, list) else [campaign.channel],
-                "budget": float(campaign.budget) if campaign.budget else None,
-                "scheduled_at": campaign.scheduled_at.isoformat() if campaign.scheduled_at else None,
-                "subject_line": campaign.subject_line,
-                "email_content": campaign.email_content,
-                "use_ai_personalization": campaign.use_ai_personalization,
-                "status": campaign.status,
-                "geographic_scope_type": campaign.geographic_scope_type,
-                "geographic_scope_values": campaign.geographic_scope_values if isinstance(campaign.geographic_scope_values, list) else [],
-                "location": campaign.location,
-                "property_type": campaign.property_type,
-                "minimum_equity": float(campaign.minimum_equity) if campaign.minimum_equity else None,
-                "min_price": float(campaign.min_price) if campaign.min_price else None,
-                "max_price": float(campaign.max_price) if campaign.max_price else None,
-                "distress_indicators": campaign.distress_indicators if isinstance(campaign.distress_indicators, list) else [],
-                "created_at": campaign.created_at.isoformat(),
-                "updated_at": campaign.updated_at.isoformat()
-            }
-        }
-    except Campaign.DoesNotExist:
-        return {
-            "status": "error",
-            "message": "Campaign not found"
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": f"Failed to retrieve campaign: {str(e)}"
-        }
+# Removed per request: Only list endpoint should remain
 
 @app.put("/campaigns/{campaign_id}/", tags=["Campaigns"])
 async def update_campaign(campaign_id: int, campaign_data: CampaignUpdate):
@@ -1663,7 +1639,7 @@ async def update_campaign(campaign_id: int, campaign_data: CampaignUpdate):
                 setattr(campaign, field, value)
         
         await sync_to_async(campaign.save)()
-    
+        
         return {
         "status": "success",
         "message": "Campaign updated successfully",
@@ -1891,9 +1867,9 @@ async def create_lead(lead_data: LeadCreate):
         )
         
         return {
-        "status": "success",
+            "status": "success",
             "message": "Lead created successfully",
-        "data": {
+            "data": {
                 "id": lead.id,
                 "first_name": lead.first_name,
                 "last_name": lead.last_name,
@@ -1966,11 +1942,11 @@ async def update_lead(lead_id: int, lead_data: LeadUpdate):
                 setattr(lead, field, value)
         
         await sync_to_async(lead.save)()
-    
+        
         return {
         "status": "success",
             "message": "Lead updated successfully",
-            "data": {
+        "data": {
                 "id": lead.id,
                 "first_name": lead.first_name,
                 "last_name": lead.last_name,
@@ -1997,9 +1973,9 @@ async def delete_lead(lead_id: int):
         
         lead = await sync_to_async(Lead.objects.get)(id=lead_id)
         await sync_to_async(lead.delete)()
-    
+        
         return {
-        "status": "success",
+            "status": "success",
             "message": "Lead deleted successfully"
         }
     except Lead.DoesNotExist:
@@ -2034,9 +2010,9 @@ async def get_lead_ai_score(lead_id: int):
             "recommendation": "High priority lead",
             "analysis_date": datetime.datetime.now().isoformat()
     }
-    
+        
         return {
-        "status": "success",
+            "status": "success",
             "data": ai_score
         }
     except Lead.DoesNotExist:
@@ -2073,7 +2049,7 @@ async def login(login_data: LoginRequest):
         # Mock authentication (replace with actual authentication logic)
         if login_data.email and login_data.password:
             return {
-        "status": "success",
+                "status": "success",
                 "data": {
                     "tokens": {
                         "access_token": "mock_jwt_token_12345",
@@ -2165,6 +2141,376 @@ async def test_dashboard():
             "test_conversations": 1250
         }
     }
+
+# ==================== ROLE MANAGEMENT ENDPOINTS ====================
+
+@app.get("/api/roles/", tags=["Role Management"])
+async def get_roles(page: int = 1, limit: int = 20):
+    """Get all roles with pagination"""
+    try:
+        from deelflow.models import Role
+        from django.core.paginator import Paginator
+        
+        # Get all roles
+        roles_queryset = Role.objects.all().prefetch_related('permissions')
+        roles_list = await sync_to_async(list)(roles_queryset)
+        
+        # Paginate
+        paginator = Paginator(roles_list, limit)
+        page_obj = paginator.get_page(page)
+        
+        # Convert to response format
+        roles_data = []
+        for role in page_obj:
+            permissions_data = []
+            for perm in role.permissions.all():
+                permissions_data.append({
+                    "id": perm.id,
+                    "name": perm.name,
+                    "label": perm.label
+                })
+            
+            roles_data.append({
+                "id": role.id,
+                "name": role.name,
+                "label": role.label,
+                "permissions": permissions_data,
+                "created_at": role.created_at.isoformat(),
+                "updated_at": role.updated_at.isoformat()
+            })
+        
+        return {
+        "status": "success",
+            "data": {
+                "roles": roles_data,
+                "total": paginator.count,
+                "page": page,
+                "limit": limit,
+                "total_pages": paginator.num_pages
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to retrieve roles: {str(e)}"
+        }
+
+@app.get("/api/roles/stats/", tags=["Role Management"])
+async def get_role_stats():
+    """Get role management statistics"""
+    try:
+        from deelflow.models import Role, Permission, User, Organization
+        
+        # Get counts
+        total_roles = await sync_to_async(Role.objects.count)()
+        total_permissions = await sync_to_async(Permission.objects.count)()
+        total_users = await sync_to_async(User.objects.count)()
+        total_tenants = await sync_to_async(Organization.objects.count)()
+        
+        # Get active tenants (non-suspended)
+        active_tenants = await sync_to_async(Organization.objects.exclude(subscription_status='suspended').count)()
+        
+        # Calculate active tenant percentage
+        active_tenant_percentage = (active_tenants / total_tenants * 100) if total_tenants > 0 else 0
+        
+        return {
+        "status": "success",
+            "data": {
+                "total_roles": total_roles,
+                "total_permissions": total_permissions,
+                "total_users": total_users,
+                "total_tenants": total_tenants,
+                "active_tenants": active_tenants,
+                "active_tenant_percentage": round(active_tenant_percentage, 1)
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to retrieve role stats: {str(e)}"
+        }
+
+@app.get("/api/roles/{role_id}/", tags=["Role Management"])
+async def get_role(role_id: int):
+    """Get a specific role by ID"""
+    try:
+        from deelflow.models import Role
+        
+        role = await sync_to_async(Role.objects.get)(id=role_id)
+        
+        # Get permissions
+        permissions_data = []
+        for perm in role.permissions.all():
+            permissions_data.append({
+                "id": perm.id,
+                "name": perm.name,
+                "label": perm.label
+            })
+        
+        return {
+        "status": "success",
+            "data": {
+                "id": role.id,
+                "name": role.name,
+                "label": role.label,
+                "permissions": permissions_data,
+                "created_at": role.created_at.isoformat(),
+                "updated_at": role.updated_at.isoformat()
+            }
+        }
+    except Role.DoesNotExist:
+        return {
+            "status": "error",
+            "message": "Role not found"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to retrieve role: {str(e)}"
+        }
+
+@app.post("/api/roles/", tags=["Role Management"])
+async def create_role(role_data: dict):
+    """Create a new role"""
+    try:
+        from deelflow.models import Role, Permission
+        
+        # Extract data
+        name = role_data.get("name")
+        label = role_data.get("label")
+        permission_ids = role_data.get("permission_ids", [])
+        
+        if not name or not label:
+            return {
+                "status": "error",
+                "message": "Role name and label are required"
+            }
+        
+        # Check if role already exists
+        existing_role = await sync_to_async(Role.objects.filter)(name=name)
+        if await sync_to_async(existing_role.exists)():
+            return {
+                "status": "error",
+                "message": "Role with this name already exists"
+            }
+        
+        # Create role
+        role = await sync_to_async(Role.objects.create)(
+            name=name,
+            label=label
+        )
+        
+        # Add permissions if provided
+        if permission_ids:
+            permissions = await sync_to_async(list)(Permission.objects.filter(id__in=permission_ids))
+            await sync_to_async(role.permissions.set)(permissions)
+        
+        # Get the role with permissions for response
+        role = await sync_to_async(Role.objects.prefetch_related('permissions').get)(id=role.id)
+        
+        # Get permissions data
+        permissions_data = []
+        for perm in role.permissions.all():
+            permissions_data.append({
+                "id": perm.id,
+                "name": perm.name,
+                "label": perm.label
+            })
+        
+        return {
+        "status": "success",
+            "message": "Role created successfully",
+            "data": {
+                "id": role.id,
+                "name": role.name,
+                "label": role.label,
+                "permissions": permissions_data,
+                "created_at": role.created_at.isoformat(),
+                "updated_at": role.updated_at.isoformat()
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to create role: {str(e)}"
+        }
+
+@app.put("/api/roles/{role_id}/", tags=["Role Management"])
+async def update_role(role_id: int, role_data: dict):
+    """Update a role by ID"""
+    try:
+        from deelflow.models import Role, Permission
+        
+        # Get role
+        role = await sync_to_async(Role.objects.get)(id=role_id)
+        
+        # Update fields if provided
+        if "name" in role_data:
+            # Check if new name already exists (excluding current role)
+            existing_role = await sync_to_async(Role.objects.filter)(name=role_data["name"]).exclude(id=role_id)
+            if await sync_to_async(existing_role.exists)():
+                return {
+                    "status": "error",
+                    "message": "Role with this name already exists"
+                }
+            role.name = role_data["name"]
+        
+        if "label" in role_data:
+            role.label = role_data["label"]
+        
+        await sync_to_async(role.save)()
+        
+        # Update permissions if provided
+        if "permission_ids" in role_data:
+            permission_ids = role_data["permission_ids"]
+            if permission_ids:
+                permissions = await sync_to_async(list)(Permission.objects.filter(id__in=permission_ids))
+                await sync_to_async(role.permissions.set)(permissions)
+            else:
+                await sync_to_async(role.permissions.clear)()
+        
+        # Get the updated role with permissions
+        role = await sync_to_async(Role.objects.prefetch_related('permissions').get)(id=role.id)
+        
+        # Get permissions data
+        permissions_data = []
+        for perm in role.permissions.all():
+            permissions_data.append({
+                "id": perm.id,
+                "name": perm.name,
+                "label": perm.label
+            })
+        
+        return {
+        "status": "success",
+            "message": "Role updated successfully",
+        "data": {
+                "id": role.id,
+                "name": role.name,
+                "label": role.label,
+                "permissions": permissions_data,
+                "created_at": role.created_at.isoformat(),
+                "updated_at": role.updated_at.isoformat()
+            }
+        }
+    except Role.DoesNotExist:
+        return {
+            "status": "error",
+            "message": "Role not found"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to update role: {str(e)}"
+        }
+
+@app.delete("/api/roles/{role_id}/", tags=["Role Management"])
+async def delete_role(role_id: int):
+    """Delete a role by ID"""
+    try:
+        from deelflow.models import Role
+        
+        role = await sync_to_async(Role.objects.get)(id=role_id)
+        await sync_to_async(role.delete)()
+        
+        return {
+            "status": "success",
+            "message": "Role deleted successfully"
+        }
+    except Role.DoesNotExist:
+        return {
+            "status": "error",
+            "message": "Role not found"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to delete role: {str(e)}"
+        }
+
+@app.get("/api/permissions/", tags=["Role Management"])
+async def get_permissions(page: int = 1, limit: int = 50):
+    """Get all permissions with pagination"""
+    try:
+        from deelflow.models import Permission
+        from django.core.paginator import Paginator
+        
+        # Get all permissions
+        permissions_queryset = Permission.objects.all()
+        permissions_list = await sync_to_async(list)(permissions_queryset)
+        
+        # Paginate
+        paginator = Paginator(permissions_list, limit)
+        page_obj = paginator.get_page(page)
+        
+        # Convert to response format
+        permissions_data = []
+        for perm in page_obj:
+            permissions_data.append({
+                "id": perm.id,
+                "name": perm.name,
+                "label": perm.label
+            })
+        
+        return {
+        "status": "success",
+            "data": {
+                "permissions": permissions_data,
+                "total": paginator.count,
+                "page": page,
+                "limit": limit,
+                "total_pages": paginator.num_pages
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to retrieve permissions: {str(e)}"
+        }
+
+@app.post("/api/permissions/", tags=["Role Management"])
+async def create_permission(permission_data: dict):
+    """Create a new permission"""
+    try:
+        from deelflow.models import Permission
+        
+        name = permission_data.get("name")
+        label = permission_data.get("label")
+        
+        if not name or not label:
+            return {
+                "status": "error",
+                "message": "Permission name and label are required"
+            }
+        
+        # Check if permission already exists
+        existing_permission = await sync_to_async(Permission.objects.filter)(name=name)
+        if await sync_to_async(existing_permission.exists)():
+            return {
+                "status": "error",
+                "message": "Permission with this name already exists"
+            }
+        
+        # Create permission
+        permission = await sync_to_async(Permission.objects.create)(
+            name=name,
+            label=label
+        )
+        
+        return {
+            "status": "success",
+            "message": "Permission created successfully",
+            "data": {
+                "id": permission.id,
+                "name": permission.name,
+                "label": permission.label
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to create permission: {str(e)}"
+        }
 
 if __name__ == "__main__":
     import uvicorn
