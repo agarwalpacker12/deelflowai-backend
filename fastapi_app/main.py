@@ -1136,17 +1136,25 @@ async def create_property(property_data: PropertyCreate):
         # Create property in Django database
         property = await sync_to_async(Property.objects.create)(
             address=property_data.street_address,
+            unit_apt=property_data.unit_apt,
             city=property_data.city,
             state=property_data.state,
             zipcode=property_data.zip_code,
+            county=property_data.county,
             property_type=property_data.property_type,
-            bedrooms=property_data.bedrooms,
-            bathrooms=property_data.bathrooms,
-            square_feet=property_data.square_feet,
-            lot_size=property_data.lot_size,
-            year_built=property_data.year_built,
-            price=property_data.purchase_price,
-            description=property_data.property_description,
+            bedrooms=int(property_data.bedrooms) if property_data.bedrooms and property_data.bedrooms != "" else None,
+            bathrooms=int(property_data.bathrooms) if property_data.bathrooms and property_data.bathrooms != "" else None,
+            square_feet=int(property_data.square_feet) if property_data.square_feet and property_data.square_feet != "" else None,
+            lot_size=float(property_data.lot_size) if property_data.lot_size and property_data.lot_size != "" else None,
+            year_built=int(property_data.year_built) if property_data.year_built and property_data.year_built != "" else None,
+            price=float(property_data.purchase_price) if property_data.purchase_price and property_data.purchase_price != "" else None,
+            arv=float(property_data.arv) if property_data.arv and property_data.arv != "" else None,
+            repair_estimate=float(property_data.repair_estimate) if property_data.repair_estimate and property_data.repair_estimate != "" else None,
+            holding_costs=float(property_data.holding_costs) if property_data.holding_costs and property_data.holding_costs != "" else None,
+            transaction_type=property_data.transaction_type,
+            assignment_fee=float(property_data.assignment_fee) if property_data.assignment_fee and property_data.assignment_fee != "" else None,
+            description=property_data.description,
+            seller_notes=property_data.seller_notes,
             status="active"
         )
         

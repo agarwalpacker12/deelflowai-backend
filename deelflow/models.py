@@ -409,11 +409,13 @@ class Property(models.Model):
     ]
     
     address = models.CharField(max_length=255)
+    unit_apt = models.CharField(max_length=50, blank=True, null=True)
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=50)
     zipcode = models.CharField(max_length=20)
+    county = models.CharField(max_length=100, blank=True, null=True)
     property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, default='residential')
-    price = models.DecimalField(max_digits=12, decimal_places=2)
+    price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     bedrooms = models.IntegerField(null=True, blank=True)
     bathrooms = models.FloatField(null=True, blank=True)
     square_feet = models.IntegerField(null=True, blank=True)
@@ -422,6 +424,14 @@ class Property(models.Model):
     description = models.TextField(blank=True, null=True)
     images = models.JSONField(default=list, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    
+    # Financial fields
+    arv = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)  # After Repair Value
+    repair_estimate = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    holding_costs = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    transaction_type = models.CharField(max_length=50, blank=True, null=True)
+    assignment_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    seller_notes = models.TextField(blank=True, null=True)
     ai_analysis = models.ForeignKey('PropertyAIAnalysis', on_delete=models.SET_NULL, null=True, blank=True, related_name='property_analyses')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

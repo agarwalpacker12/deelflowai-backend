@@ -34,7 +34,7 @@ class PropertyCreate(BaseModel):
     assignment_fee: Optional[str] = ""
     
     # Additional Information
-    property_description: Optional[str] = ""
+    description: Optional[str] = ""
     seller_notes: Optional[str] = ""
 
 class PropertyUpdate(BaseModel):
@@ -64,7 +64,7 @@ class PropertyUpdate(BaseModel):
     assignment_fee: Optional[str] = None
     
     # Additional Information
-    property_description: Optional[str] = None
+    description: Optional[str] = None
     seller_notes: Optional[str] = None
 
 class PropertyResponse(BaseModel):
@@ -94,7 +94,7 @@ class PropertyResponse(BaseModel):
     assignment_fee: str = ""
     
     # Additional Information
-    property_description: str = ""
+    description: str = ""
     seller_notes: str = ""
     
     # System Fields
@@ -131,7 +131,7 @@ class PropertyCreateRequest(BaseModel):
     assignment_fee: Optional[str] = ""
     
     # Additional Information
-    property_description: Optional[str] = ""
+    description: Optional[str] = ""
     seller_notes: Optional[str] = ""
 
 class PropertyUpdateRequest(BaseModel):
@@ -161,7 +161,7 @@ class PropertyUpdateRequest(BaseModel):
     assignment_fee: Optional[str] = None
     
     # Additional Information
-    property_description: Optional[str] = None
+    description: Optional[str] = None
     seller_notes: Optional[str] = None
 
 class PropertyBase(BaseModel):
@@ -176,7 +176,7 @@ class PropertyBase(BaseModel):
     square_feet: Optional[str] = ""
     lot_size: Optional[str] = ""
     year_built: Optional[str] = ""
-    property_description: Optional[str] = ""
+    description: Optional[str] = ""
 
 class PropertyListResponse(BaseModel):
     """Property list response schema"""
