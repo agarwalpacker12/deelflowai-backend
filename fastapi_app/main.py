@@ -29,6 +29,7 @@ from app.schemas.milestone import MilestoneCreate, MilestoneUpdate, MilestoneRes
 from app.schemas.property_save import PropertySaveCreate, PropertySaveUpdate, PropertySaveResponse, PropertySaveListResponse
 from app.schemas.payment import PaymentIntentCreate, PaymentConfirm, PaymentIntentResponse, PaymentResponse, SubscriptionResponse
 from app.schemas.auth import RegisterRequest, RegisterRequestV2
+from app.schemas.role import RoleCreate, RoleUpdate, RoleResponse
 
 # Mock data functions (replacing deleted database module)
 # Import database functions
@@ -2659,11 +2660,12 @@ async def get_role(role_id: int):
     try:
         from deelflow.models import Role
         
-        role = await sync_to_async(Role.objects.get)(id=role_id)
+        role = await sync_to_async(Role.objects.prefetch_related('permissions').get)(id=role_id)
         
-        # Get permissions
+        # Get permissions using sync_to_async
         permissions_data = []
-        for perm in role.permissions.all():
+        permissions_list = await sync_to_async(list)(role.permissions.all())
+        for perm in permissions_list:
             permissions_data.append({
                 "id": perm.id,
                 "name": perm.name,
@@ -2692,16 +2694,84 @@ async def get_role(role_id: int):
             "message": f"Failed to retrieve role: {str(e)}"
         }
 
-@app.post("/api/roles/", tags=["Role Management"])
-async def create_role(role_data: dict):
-    """Create a new role"""
+@app.post("/api/roles/", 
+         tags=["Role Management"],
+         summary="Create Role",
+         description="Create a new role with specified permissions",
+         response_description="Created role details",
+         responses={
+             200: {
+                 "description": "Role created successfully",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "success",
+                             "message": "Role created successfully",
+                             "data": {
+                                 "id": 1,
+                                 "name": "admin",
+                                 "label": "Administrator",
+                                 "permissions": [
+                                     {"id": 1, "name": "manage_users", "label": "Manage Users"},
+                                     {"id": 2, "name": "manage_roles", "label": "Manage Roles"}
+                                 ],
+                                 "created_at": "2024-10-13T07:34:07.710903+00:00",
+                                 "updated_at": "2024-10-13T07:34:07.710903+00:00"
+                             }
+                         }
+                     }
+                 }
+             },
+             400: {
+                 "description": "Bad request - missing required fields",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Role name and label are required"
+                         }
+                     }
+                 }
+             },
+             409: {
+                 "description": "Conflict - role already exists",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Role with this name already exists"
+                         }
+                     }
+                 }
+             }
+         })
+async def create_role(role_data: RoleCreate):
+    """
+    **Create Role**
+    
+    Creates a new role with specified permissions.
+    
+    **Request Body:**
+    - **name** (str): Unique role name (required)
+    - **label** (str): Human-readable role label (required)
+    - **permission_ids** (List[int]): List of permission IDs to assign (optional)
+    
+    **Example Request:**
+    ```json
+    {
+        "name": "admin",
+        "label": "Administrator",
+        "permission_ids": [1, 2, 3]
+    }
+    ```
+    """
     try:
         from deelflow.models import Role, Permission
         
-        # Extract data
-        name = role_data.get("name")
-        label = role_data.get("label")
-        permission_ids = role_data.get("permission_ids", [])
+        # Extract data from Pydantic model
+        name = role_data.name
+        label = role_data.label
+        permission_ids = role_data.permission_ids
         
         if not name or not label:
             return {
