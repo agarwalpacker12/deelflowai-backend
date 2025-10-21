@@ -239,7 +239,6 @@ async def get_stats():
     try:
         # Get data from database
         db_stats = await get_dashboard_stats()
-        
         return {
             'status': 'success',
             'data': {
@@ -262,7 +261,7 @@ async def get_stats():
             }
         }
     except Exception as e:
-        return {
+            return {
             'status': 'error',
             'message': f'Failed to fetch stats: {str(e)}',
             'data': {}
@@ -334,7 +333,7 @@ async def get_opportunity_cost_analysis():
             "data": db_data
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch opportunity cost analysis: {str(e)}"
         }
@@ -356,7 +355,7 @@ async def get_total_revenue():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch revenue data: {str(e)}"
         }
@@ -367,8 +366,8 @@ async def get_active_users():
     try:
         db_stats = await get_dashboard_stats()
         return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
                 "active_users": db_stats['totalUsers'],
                 "change_percentage": 8.3,  # Frontend expects this field name
                 "new_users_this_month": 15,
@@ -376,7 +375,7 @@ async def get_active_users():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch users data: {str(e)}"
         }
@@ -387,8 +386,8 @@ async def get_properties_listed():
     try:
         db_stats = await get_dashboard_stats()
         return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
                 "properties_listed": db_stats['totalProperties'],
                 "change_percentage": 15.2,  # Frontend expects this field name
                 "new_listings_this_month": 8,
@@ -396,7 +395,7 @@ async def get_properties_listed():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch properties data: {str(e)}"
         }
@@ -407,8 +406,8 @@ async def get_ai_conversations():
     try:
         db_stats = await get_dashboard_stats()
         return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
                 "ai_conversations": 1250,  # Mock data
                 "change_percentage": 87.5,  # Frontend expects this field name
                 "successful_interactions": 1094,
@@ -416,7 +415,7 @@ async def get_ai_conversations():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch AI conversations data: {str(e)}"
         }
@@ -427,8 +426,8 @@ async def get_total_deals():
     try:
         db_stats = await get_dashboard_stats()
         return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
                 "total_deals": db_stats['totalDeals'],
                 "change_percentage": 22.1,  # Frontend expects this field name
                 "closed_deals_this_month": 12,
@@ -436,7 +435,7 @@ async def get_total_deals():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch deals data: {str(e)}"
         }
@@ -447,8 +446,8 @@ async def get_monthly_profit():
     try:
         db_stats = await get_dashboard_stats()
         return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
                 "monthly_profit": 45000.00,
                 "change_percentage": 18.7,  # Frontend expects this field name
                 "profit_margin": 35.2,
@@ -456,7 +455,7 @@ async def get_monthly_profit():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch profit data: {str(e)}"
         }
@@ -467,8 +466,8 @@ async def get_voice_calls_count():
     try:
         db_stats = await get_dashboard_stats()
         return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
                 "voice_calls": 245,
                 "change_percentage": 87.5,  # Frontend expects this field name
                 "average_duration": 4.2,
@@ -476,7 +475,7 @@ async def get_voice_calls_count():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch voice calls data: {str(e)}"
         }
@@ -487,8 +486,8 @@ async def get_compliance_status():
     try:
         db_stats = await get_dashboard_stats()
         return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
                 "compliance_status": "compliant",
                 "audit_score": 94.2,
                 "last_audit": "2025-10-01T00:00:00Z",
@@ -496,7 +495,7 @@ async def get_compliance_status():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch compliance data: {str(e)}"
         }
@@ -509,15 +508,15 @@ async def get_voice_ai_calls_count():
     try:
         ai_metrics = await get_ai_metrics()
         return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
                 "total_calls": ai_metrics.get('voiceCalls', 0),
                 "success_rate": 87.5,
                 "average_duration": 4.2
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch voice AI metrics: {str(e)}"
         }
@@ -528,15 +527,15 @@ async def get_vision_analysis():
     try:
         ai_metrics = await get_ai_metrics()
         return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
                 "total_analyses": ai_metrics.get('visionAnalyses', 0),
                 "accuracy_rate": 89.2,
                 "processing_time": 2.1
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch vision analysis metrics: {str(e)}"
         }
@@ -547,15 +546,15 @@ async def get_nlp_processing():
     try:
         ai_metrics = await get_ai_metrics()
         return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
                 "total_processed": ai_metrics.get('nlpAnalyses', 0),
                 "processing_success_rate": 91.5,
                 "average_processing_time": 1.8
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch NLP processing metrics: {str(e)}"
         }
@@ -566,15 +565,15 @@ async def get_blockchain_transactions():
     try:
         ai_metrics = await get_ai_metrics()
         return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
                 "total_transactions": ai_metrics.get('blockchainTxns', 0),
                 "success_rate": 95.8,
                 "average_processing_time": 3.2
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch blockchain metrics: {str(e)}"
         }
@@ -591,7 +590,7 @@ async def get_tenant_management():
             "data": tenant_data
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch tenant data: {str(e)}"
         }
@@ -602,11 +601,11 @@ async def get_tenant_management_stats():
     try:
         tenant_data = await get_tenant_management_data()
         return {
-            "status": "success",
+        "status": "success",
             "data": tenant_data
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch tenant stats: {str(e)}"
         }
@@ -617,11 +616,11 @@ async def get_analytics_opportunity_cost():
     try:
         opportunity_data = await get_opportunity_cost_data()
         return {
-            "status": "success",
+        "status": "success",
             "data": opportunity_data
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch analytics data: {str(e)}"
         }
@@ -645,8 +644,8 @@ async def get_analytics_deals():
     try:
         # Mock data for now - replace with actual database calls when ready
         return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
                 "overview": {
                     "total_deals": 5,
                     "total_properties": 12,
@@ -675,7 +674,7 @@ async def get_analytics_deals():
                 },
                 "deals": [
                     {
-                        "id": 1,
+            "id": 1,
                         "property_address": "123 Main St, Dallas, TX",
                         "offer_price": 150000.0,
                         "status": "active",
@@ -694,7 +693,7 @@ async def get_analytics_deals():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch deals analytics: {str(e)}"
         }
@@ -759,7 +758,7 @@ async def get_analytics_campaigns():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch campaigns analytics: {str(e)}"
         }
@@ -819,7 +818,7 @@ async def get_analytics_performance():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch performance analytics: {str(e)}"
         }
@@ -895,7 +894,7 @@ async def get_analytics_market():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch market analytics: {str(e)}"
         }
@@ -904,8 +903,8 @@ async def get_analytics_market():
 async def get_organizations_status():
     """Get organizations status"""
     return {
-            "status": "success",
-            "data": {
+        "status": "success",
+        "data": {
             "active_organizations": 25,
             "total_organizations": 28,
             "suspended_organizations": 3,
@@ -928,7 +927,7 @@ async def get_live_activity_feed():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch live activity: {str(e)}"
         }
@@ -960,7 +959,7 @@ async def get_revenue_user_growth_chart_data():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch chart data: {str(e)}"
         }
@@ -983,7 +982,7 @@ async def get_ai_metrics_overall_accuracy():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch AI accuracy: {str(e)}"
         }
@@ -1018,7 +1017,7 @@ async def get_market_alerts_recent():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch market alerts: {str(e)}"
         }
@@ -1058,7 +1057,7 @@ async def get_recent_activity():
             ]
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to fetch recent activity: {str(e)}"
         }
@@ -1111,7 +1110,6 @@ async def get_properties():
                 "created_at": property.created_at.isoformat(),
                 "updated_at": property.updated_at.isoformat()
             })
-        
         return {
             "status": "success",
             "data": property_data,
@@ -1120,7 +1118,7 @@ async def get_properties():
             "limit": 20
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to retrieve properties: {str(e)}",
             "data": [],
@@ -1174,7 +1172,7 @@ async def create_property(property_data: PropertyCreate):
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to create property: {str(e)}"
         }
@@ -1190,8 +1188,8 @@ async def create_property(property_data: PropertyCreate):
                  "content": {
                      "application/json": {
                          "example": {
-                             "status": "success",
-                             "data": {
+        "status": "success",
+        "data": {
                                  "id": 1,
                                  "street_address": "123 Main Street",
                                  "unit_apt": "Apt 2B",
@@ -1281,9 +1279,202 @@ async def get_property(property_id: int):
         from deelflow.models import Property
         
         property = await sync_to_async(Property.objects.get)(id=property_id)
+        return {
+        "status": "success",
+        "data": {
+                "id": property.id,
+                "street_address": property.address,
+                "unit_apt": property.unit_apt,
+                "city": property.city,
+                "state": property.state,
+                "zip_code": property.zipcode,
+                "county": property.county,
+                "property_type": property.property_type,
+                "bedrooms": property.bedrooms,
+                "bathrooms": property.bathrooms,
+                "square_feet": property.square_feet,
+                "lot_size": property.lot_size,
+                "year_built": property.year_built,
+                "purchase_price": float(property.price) if property.price else None,
+                "arv": float(property.arv) if property.arv else None,
+                "repair_estimate": float(property.repair_estimate) if property.repair_estimate else None,
+                "holding_costs": float(property.holding_costs) if property.holding_costs else None,
+                "transaction_type": property.transaction_type,
+                "assignment_fee": float(property.assignment_fee) if property.assignment_fee else None,
+                "property_description": property.description,
+                "seller_notes": property.seller_notes,
+                "images": property.images,
+                "status": property.status,
+                "created_at": property.created_at.isoformat(),
+                "updated_at": property.updated_at.isoformat()
+            }
+        }
+    except Property.DoesNotExist:
+            return {
+            "status": "error",
+            "message": "Property not found"
+        }
+    except Exception as e:
+            return {
+            "status": "error",
+            "message": f"Failed to retrieve property: {str(e)}"
+        }
+
+@app.put("/api/properties/{property_id}/", 
+         tags=["Properties"],
+         summary="Update Property by ID",
+         description="Updates a specific property by its ID with all provided fields including financial details, property specifications, and location information.",
+         response_description="Updated property details",
+         responses={
+             200: {
+                 "description": "Property updated successfully",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "success",
+                             "message": "Property updated successfully",
+                             "data": {
+                                 "id": 1,
+                                 "street_address": "123 Main Street",
+                                 "unit_apt": "Apt 2B",
+                                 "city": "Miami",
+                                 "state": "FL",
+                                 "zip_code": "33101",
+                                 "county": "Miami-Dade",
+                                 "property_type": "residential",
+                                 "bedrooms": 3,
+                                 "bathrooms": 2.5,
+                                 "square_feet": 1800,
+                                 "lot_size": 0.25,
+                                 "year_built": 1995,
+                                 "purchase_price": 250000.0,
+                                 "arv": 350000.0,
+                                 "repair_estimate": 25000.0,
+                                 "holding_costs": 5000.0,
+                                 "transaction_type": "wholesale",
+                                 "assignment_fee": 10000.0,
+                                 "property_description": "Beautiful single-family home in great neighborhood",
+                                 "seller_notes": "Motivated seller, needs quick sale",
+                                 "images": ["image1.jpg", "image2.jpg"],
+                                 "status": "active",
+                                 "created_at": "2024-10-13T07:34:07.710903+00:00",
+                                 "updated_at": "2024-10-18T06:28:14.415806+00:00"
+                             }
+                         }
+                     }
+                 }
+             },
+             404: {
+                 "description": "Property not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Property not found"
+                         }
+                     }
+                 }
+             },
+             500: {
+                 "description": "Internal server error",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Failed to update property: Database connection error"
+                         }
+                     }
+                 }
+             }
+         })
+async def update_property(property_id: int, property_data: PropertyUpdate):
+    """
+    **Update Property by ID**
+    
+    Updates a specific property by its ID with comprehensive data including:
+    
+    **Location Data:**
+    - Street address and unit/apartment information
+    - City, state, zip code, and county details
+    
+    **Property Specifications:**
+    - Property type, bedrooms, bathrooms
+    - Square footage and lot size
+    - Year built and property description
+    
+    **Financial Information:**
+    - Purchase price and after repair value (ARV)
+    - Repair estimates and holding costs
+    - Transaction type and assignment fees
+    
+    **Additional Details:**
+    - Seller notes and property images
+    - Status and timestamps
+    
+    **Parameters:**
+    - **property_id** (int): The unique identifier of the property to update
+    
+    **Request Body:**
+    - All fields are optional - only provided fields will be updated
+    
+    **Returns:**
+    - **200**: Updated property data with all fields
+    - **404**: Property not found
+    - **500**: Server error during update
+    """
+    try:
+        from deelflow.models import Property
         
+        property = await sync_to_async(Property.objects.get)(id=property_id)
+        
+        # Update property fields with proper type conversion (matching POST endpoint)
+        if property_data.street_address is not None:
+            property.address = property_data.street_address
+        if property_data.unit_apt is not None:
+            property.unit_apt = property_data.unit_apt
+        if property_data.city is not None:
+            property.city = property_data.city
+        if property_data.state is not None:
+            property.state = property_data.state
+        if property_data.zip_code is not None:
+            property.zipcode = property_data.zip_code
+        if property_data.county is not None:
+            property.county = property_data.county
+        if property_data.property_type is not None:
+            property.property_type = property_data.property_type
+        if property_data.bedrooms is not None:
+            property.bedrooms = int(property_data.bedrooms) if property_data.bedrooms and property_data.bedrooms != "" else None
+        if property_data.bathrooms is not None:
+            property.bathrooms = int(property_data.bathrooms) if property_data.bathrooms and property_data.bathrooms != "" else None
+        if property_data.square_feet is not None:
+            property.square_feet = int(property_data.square_feet) if property_data.square_feet and property_data.square_feet != "" else None
+        if property_data.lot_size is not None:
+            property.lot_size = float(property_data.lot_size) if property_data.lot_size and property_data.lot_size != "" else None
+        if property_data.year_built is not None:
+            property.year_built = int(property_data.year_built) if property_data.year_built and property_data.year_built != "" else None
+        if property_data.purchase_price is not None:
+            property.price = float(property_data.purchase_price) if property_data.purchase_price and property_data.purchase_price != "" else None
+        if property_data.arv is not None:
+            property.arv = float(property_data.arv) if property_data.arv and property_data.arv != "" else None
+        if property_data.repair_estimate is not None:
+            property.repair_estimate = float(property_data.repair_estimate) if property_data.repair_estimate and property_data.repair_estimate != "" else None
+        if property_data.holding_costs is not None:
+            property.holding_costs = float(property_data.holding_costs) if property_data.holding_costs and property_data.holding_costs != "" else None
+        if property_data.transaction_type is not None:
+            property.transaction_type = property_data.transaction_type
+        if property_data.assignment_fee is not None:
+            property.assignment_fee = float(property_data.assignment_fee) if property_data.assignment_fee and property_data.assignment_fee != "" else None
+        if property_data.description is not None:
+            property.description = property_data.description
+        if property_data.seller_notes is not None:
+            property.seller_notes = property_data.seller_notes
+        if property_data.status is not None:
+            property.status = property_data.status
+        
+        await sync_to_async(property.save)()
         return {
             "status": "success",
+            "message": "Property updated successfully",
             "data": {
                 "id": property.id,
                 "street_address": property.address,
@@ -1313,48 +1504,12 @@ async def get_property(property_id: int):
             }
         }
     except Property.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Property not found"
         }
     except Exception as e:
-        return {
-            "status": "error",
-            "message": f"Failed to retrieve property: {str(e)}"
-        }
-
-@app.put("/api/properties/{property_id}/", tags=["Properties"])
-async def update_property(property_id: int, property_data: PropertyUpdate):
-    """Update a property by ID - Frontend compatible endpoint"""
-    try:
-        from deelflow.models import Property
-        
-        property = await sync_to_async(Property.objects.get)(id=property_id)
-        
-        # Update property fields
-        for field, value in property_data.dict(exclude_unset=True).items():
-            if hasattr(property, field):
-                setattr(property, field, value)
-        
-        await sync_to_async(property.save)()
-        
-        return {
-            "status": "success",
-            "message": "Property updated successfully",
-            "data": {
-                "id": property.id,
-                "address": property.address,
-                "status": property.status,
-                "updated_at": property.updated_at.isoformat()
-            }
-        }
-    except Property.DoesNotExist:
-        return {
-            "status": "error",
-            "message": "Property not found"
-        }
-    except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to update property: {str(e)}"
         }
@@ -1367,18 +1522,17 @@ async def delete_property(property_id: int):
         
         property = await sync_to_async(Property.objects.get)(id=property_id)
         await sync_to_async(property.delete)()
-
         return {
-            "status": "success",
+        "status": "success",
             "message": "Property deleted successfully"
         }
     except Property.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Property not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to delete property: {str(e)}"
         }
@@ -1407,18 +1561,17 @@ async def get_property_ai_analysis(property_id: int):
                 "Neighborhood shows positive growth trends"
             ]
         }
-        
         return {
-            "status": "success",
+        "status": "success",
             "data": ai_analysis
         }
     except Property.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Property not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to get AI analysis: {str(e)}"
         }
@@ -1433,14 +1586,14 @@ async def get_property_saves(params: dict = None):
         
         # For now, return empty list since PropertySave model might not exist
         return {
-            "status": "success",
+        "status": "success",
             "data": [],
             "total": 0,
             "page": 1,
             "limit": 20
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to retrieve property saves: {str(e)}",
             "data": [],
@@ -1453,12 +1606,26 @@ async def get_property_saves(params: dict = None):
 async def get_property_save(property_save_id: int):
     """Get a specific property save by ID - Frontend compatible endpoint"""
     try:
+        from deelflow.models import PropertySave
+        
+        property_save = await sync_to_async(PropertySave.objects.get)(id=property_save_id)
         return {
+            "status": "success",
+            "data": {
+                "id": property_save.id,
+                "property_id": property_save.property_id,
+                "user_id": property_save.user_id,
+                "saved_at": property_save.saved_at.isoformat(),
+                "notes": property_save.notes
+            }
+        }
+    except PropertySave.DoesNotExist:
+            return {
             "status": "error",
             "message": "Property save not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to retrieve property save: {str(e)}"
         }
@@ -1467,18 +1634,25 @@ async def get_property_save(property_save_id: int):
 async def create_property_save(property_save_data: dict):
     """Create a new property save - Frontend compatible endpoint"""
     try:
+        from deelflow.models import PropertySave
+        
+        property_save = await sync_to_async(PropertySave.objects.create)(
+            property_id=property_save_data.get("property_id"),
+            user_id=property_save_data.get("user_id"),
+            notes=property_save_data.get("notes", "")
+        )
         return {
-        "status": "success",
+            "status": "success",
             "message": "Property save created successfully",
             "data": {
-                "id": 1,
-                "property_id": property_save_data.get("property_id"),
-                "user_id": property_save_data.get("user_id"),
+                "id": property_save.id,
+                "property_id": property_save.property_id,
+                "user_id": property_save.user_id,
                 "created_at": timezone.now().isoformat()
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to create property save: {str(e)}"
         }
@@ -1487,16 +1661,28 @@ async def create_property_save(property_save_data: dict):
 async def update_property_save(property_save_id: int, property_save_data: dict):
     """Update a property save by ID - Frontend compatible endpoint"""
     try:
+        from deelflow.models import PropertySave
+        
+        property_save = await sync_to_async(PropertySave.objects.get)(id=property_save_id)
+        
+        # Update fields
+        if "notes" in property_save_data:
+            property_save.notes = property_save_data["notes"]
+        
+        await sync_to_async(property_save.save)()
         return {
-        "status": "success",
+            "status": "success",
             "message": "Property save updated successfully",
-        "data": {
-                "id": property_save_id,
-                "updated_at": timezone.now().isoformat()
+            "data": {
+                "id": property_save.id,
+                "property_id": property_save.property_id,
+                "user_id": property_save.user_id,
+                "notes": property_save.notes,
+                "updated_at": property_save.updated_at.isoformat()
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to update property save: {str(e)}"
         }
@@ -1505,12 +1691,13 @@ async def update_property_save(property_save_id: int, property_save_data: dict):
 async def delete_property_save(property_save_id: int):
     """Delete a property save by ID - Frontend compatible endpoint"""
     try:
+        # TODO: Add proper implementation
         return {
         "status": "success",
             "message": "Property save deleted successfully"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to delete property save: {str(e)}"
         }
@@ -1528,23 +1715,23 @@ async def delete_property_save(property_save_id: int):
                  "content": {
                      "application/json": {
                          "example": {
-                             "status": "success",
-                             "data": [
-                                 {
-                                     "id": 1,
+        "status": "success",
+        "data": [
+            {
+                "id": 1,
                                      "name": "Sample Campaign",
                                      "campaign_type": "seller_finder",
                                      "channel": ["email", "phone"],
                                      "budget": 5000.0,
-                                     "status": "active",
+                "status": "active",
                                      "geographic_scope_values": ["Miami-Dade", "Broward"],
                                      "distress_indicators": ["Pre-foreclosure", "Divorce"]
-                                 }
-                             ],
+            }
+        ],
                              "total": 25,
-                             "page": 1,
-                             "limit": 20
-                         }
+        "page": 1,
+        "limit": 20
+    }
                      }
                  }
              },
@@ -1662,16 +1849,15 @@ async def get_campaigns():
                 "distress_indicators": distress,
                 "created_at": campaign.created_at.isoformat()
             })
-        
         return {
-            "status": "success",
+        "status": "success",
             "data": campaign_data,
             "total": len(campaign_data),
             "page": 1,
             "limit": 20
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to retrieve campaigns: {str(e)}",
             "data": [],
@@ -1691,8 +1877,8 @@ async def get_campaigns():
                  "content": {
                      "application/json": {
                          "example": {
-                             "status": "success",
-                             "data": {
+        "status": "success",
+        "data": {
                                  "id": 1,
                                  "name": "Sample Campaign",
                                  "campaign_type": "seller_finder",
@@ -1702,7 +1888,7 @@ async def get_campaigns():
                                  "subject_line": "Investment Opportunity",
                                  "email_content": "Discover amazing property deals...",
                                  "use_ai_personalization": True,
-                                 "status": "active",
+            "status": "active",
                                  "geographic_scope_type": "counties",
                                  "geographic_scope_values": ["Miami-Dade", "Broward"],
                                  "location": "Miami, FL",
@@ -1840,25 +2026,25 @@ async def get_campaign(campaign_id: int):
             channel_out = [channel_val] if channel_val else []
         
         campaign_data = {
-            "id": campaign.id,
-            "name": campaign.name,
-            "campaign_type": campaign.campaign_type,
+                "id": campaign.id,
+                "name": campaign.name,
+                "campaign_type": campaign.campaign_type,
             "channel": channel_out,
-            "budget": float(campaign.budget) if campaign.budget else None,
-            "scheduled_at": campaign.scheduled_at.isoformat() if campaign.scheduled_at else None,
-            "subject_line": campaign.subject_line,
-            "email_content": campaign.email_content,
-            "use_ai_personalization": campaign.use_ai_personalization,
-            "status": campaign.status,
-            "geographic_scope_type": campaign.geographic_scope_type,
+                "budget": float(campaign.budget) if campaign.budget else None,
+                "scheduled_at": campaign.scheduled_at.isoformat() if campaign.scheduled_at else None,
+                "subject_line": campaign.subject_line,
+                "email_content": campaign.email_content,
+                "use_ai_personalization": campaign.use_ai_personalization,
+                "status": campaign.status,
+                "geographic_scope_type": campaign.geographic_scope_type,
             "geographic_scope_values": geo_values,
-            "location": campaign.location,
-            "property_type": campaign.property_type,
-            "minimum_equity": float(campaign.minimum_equity) if campaign.minimum_equity else None,
-            "min_price": float(campaign.min_price) if campaign.min_price else None,
-            "max_price": float(campaign.max_price) if campaign.max_price else None,
+                "location": campaign.location,
+                "property_type": campaign.property_type,
+                "minimum_equity": float(campaign.minimum_equity) if campaign.minimum_equity else None,
+                "min_price": float(campaign.min_price) if campaign.min_price else None,
+                "max_price": float(campaign.max_price) if campaign.max_price else None,
             "distress_indicators": distress,
-            "created_at": campaign.created_at.isoformat(),
+                "created_at": campaign.created_at.isoformat(),
             "updated_at": campaign.updated_at.isoformat() if campaign.updated_at else None,
             # Seller Finder - Geographic Details
             "seller_country": campaign.seller_country,
@@ -1887,18 +2073,17 @@ async def get_campaign(campaign_id: int):
             "employment_status": campaign.employment_status,
             "home_ownership_status": campaign.home_ownership_status
         }
-        
         return {
             "status": "success",
             "data": campaign_data
         }
     except Campaign.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Campaign not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to retrieve campaign: {str(e)}"
         }
@@ -1964,6 +2149,7 @@ async def create_campaign(campaign_data: CampaignCreate):
             print(f"  - channel: {channel}")
             
             from django.utils import timezone
+            
             campaign = await sync_to_async(Campaign.objects.create)(
             name=campaign_data.name,
             campaign_type=campaign_data.campaign_type,
@@ -2015,7 +2201,7 @@ async def create_campaign(campaign_data: CampaignCreate):
             print(f"✗ Database error: {str(db_error)}")
             import traceback
             print(f"Database error traceback: {traceback.format_exc()}")
-            return {
+        return {
                 "status": "error",
                 "message": f"Database error: {str(db_error)}"
             }
@@ -2063,11 +2249,10 @@ async def update_campaign(campaign_id: int, campaign_data: CampaignUpdate):
                 setattr(campaign, field, value)
         
         await sync_to_async(campaign.save)()
-        
         return {
-        "status": "success",
+            "status": "success",
         "message": "Campaign updated successfully",
-        "data": {
+            "data": {
                 "id": campaign.id,
                 "name": campaign.name,
                 "status": campaign.status,
@@ -2075,12 +2260,12 @@ async def update_campaign(campaign_id: int, campaign_data: CampaignUpdate):
             }
         }
     except Campaign.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Campaign not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to update campaign: {str(e)}"
         }
@@ -2093,18 +2278,17 @@ async def delete_campaign(campaign_id: int):
         
         campaign = await sync_to_async(Campaign.objects.get)(id=campaign_id)
         await sync_to_async(campaign.delete)()
-        
         return {
-            "status": "success",
+        "status": "success",
             "message": "Campaign deleted successfully"
         }
     except Campaign.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Campaign not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to delete campaign: {str(e)}"
         }
@@ -2133,7 +2317,6 @@ async def get_active_campaign_summary():
     try:
         from deelflow.models import Campaign
         active_campaigns = await sync_to_async(list)(Campaign.objects.filter(status="active"))
-        
         return {
         "status": "success",
         "data": {
@@ -2154,7 +2337,7 @@ async def get_active_campaign_summary():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to get active campaigns: {str(e)}"
         }
@@ -2201,6 +2384,7 @@ async def get_channel_response_rates():
 async def get_lead_conversion_funnel():
     """Get lead conversion funnel data - Frontend compatible endpoint"""
     try:
+        # TODO: Add proper implementation
         return {
             "status": "success",
             "data": {
@@ -2215,7 +2399,7 @@ async def get_lead_conversion_funnel():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to get lead conversion funnel: {str(e)}"
         }
@@ -2253,7 +2437,6 @@ async def get_leads():
                 "created_at": lead.created_at.isoformat(),
                 "updated_at": lead.updated_at.isoformat()
             })
-        
         return {
             "status": "success",
             "data": lead_data,
@@ -2262,7 +2445,7 @@ async def get_leads():
             "limit": 20
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to retrieve leads: {str(e)}",
             "data": [],
@@ -2289,7 +2472,6 @@ async def create_lead(lead_data: LeadCreate):
             source=lead_data.source,
             status=lead_data.status
         )
-        
         return {
             "status": "success",
             "message": "Lead created successfully",
@@ -2304,7 +2486,7 @@ async def create_lead(lead_data: LeadCreate):
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to create lead: {str(e)}"
         }
@@ -2316,7 +2498,6 @@ async def get_lead(lead_id: int):
         from deelflow.models import Lead
         
         lead = await sync_to_async(Lead.objects.get)(id=lead_id)
-    
         return {
         "status": "success",
             "data": {
@@ -2342,12 +2523,12 @@ async def get_lead(lead_id: int):
             }
         }
     except Lead.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Lead not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to retrieve lead: {str(e)}"
         }
@@ -2366,7 +2547,6 @@ async def update_lead(lead_id: int, lead_data: LeadUpdate):
                 setattr(lead, field, value)
         
         await sync_to_async(lead.save)()
-        
         return {
         "status": "success",
             "message": "Lead updated successfully",
@@ -2379,12 +2559,12 @@ async def update_lead(lead_id: int, lead_data: LeadUpdate):
             }
         }
     except Lead.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Lead not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to update lead: {str(e)}"
         }
@@ -2397,18 +2577,17 @@ async def delete_lead(lead_id: int):
         
         lead = await sync_to_async(Lead.objects.get)(id=lead_id)
         await sync_to_async(lead.delete)()
-        
         return {
-            "status": "success",
+        "status": "success",
             "message": "Lead deleted successfully"
         }
     except Lead.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Lead not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to delete lead: {str(e)}"
         }
@@ -2434,18 +2613,17 @@ async def get_lead_ai_score(lead_id: int):
             "recommendation": "High priority lead",
             "analysis_date": datetime.datetime.now().isoformat()
     }
-        
         return {
-            "status": "success",
+        "status": "success",
             "data": ai_score
         }
     except Lead.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Lead not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to get AI score: {str(e)}"
         }
@@ -2472,7 +2650,7 @@ async def login(login_data: LoginRequest):
     try:
         # Mock authentication (replace with actual authentication logic)
         if login_data.email and login_data.password:
-            return {
+                return {
                 "status": "success",
                 "data": {
                     "tokens": {
@@ -2494,7 +2672,7 @@ async def login(login_data: LoginRequest):
                 "message": "Invalid credentials"
             }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Login failed: {str(e)}"
         }
@@ -2532,7 +2710,7 @@ async def register(register_data: RegisterRequest):
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Registration failed: {str(e)}"
         }
@@ -2602,7 +2780,6 @@ async def get_roles(page: int = 1, limit: int = 20):
                 "created_at": role.created_at.isoformat(),
                 "updated_at": role.updated_at.isoformat()
             })
-        
         return {
         "status": "success",
             "data": {
@@ -2614,7 +2791,7 @@ async def get_roles(page: int = 1, limit: int = 20):
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to retrieve roles: {str(e)}"
         }
@@ -2636,7 +2813,6 @@ async def get_role_stats():
         
         # Calculate active tenant percentage
         active_tenant_percentage = (active_tenants / total_tenants * 100) if total_tenants > 0 else 0
-        
         return {
         "status": "success",
             "data": {
@@ -2649,7 +2825,7 @@ async def get_role_stats():
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to retrieve role stats: {str(e)}"
         }
@@ -2671,7 +2847,6 @@ async def get_role(role_id: int):
                 "name": perm.name,
                 "label": perm.label
             })
-        
         return {
         "status": "success",
             "data": {
@@ -2684,12 +2859,12 @@ async def get_role(role_id: int):
             }
         }
     except Role.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Role not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to retrieve role: {str(e)}"
         }
@@ -2809,11 +2984,10 @@ async def create_role(role_data: RoleCreate):
                 "name": perm.name,
                 "label": perm.label
             })
-        
         return {
         "status": "success",
             "message": "Role created successfully",
-            "data": {
+        "data": {
                 "id": role.id,
                 "name": role.name,
                 "label": role.label,
@@ -2823,7 +2997,7 @@ async def create_role(role_data: RoleCreate):
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to create role: {str(e)}"
         }
@@ -2873,7 +3047,6 @@ async def update_role(role_id: int, role_data: dict):
                 "name": perm.name,
                 "label": perm.label
             })
-        
         return {
         "status": "success",
             "message": "Role updated successfully",
@@ -2887,12 +3060,12 @@ async def update_role(role_id: int, role_data: dict):
             }
         }
     except Role.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Role not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to update role: {str(e)}"
         }
@@ -2905,18 +3078,17 @@ async def delete_role(role_id: int):
         
         role = await sync_to_async(Role.objects.get)(id=role_id)
         await sync_to_async(role.delete)()
-        
         return {
             "status": "success",
             "message": "Role deleted successfully"
         }
     except Role.DoesNotExist:
-        return {
+            return {
             "status": "error",
             "message": "Role not found"
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to delete role: {str(e)}"
         }
@@ -2944,7 +3116,6 @@ async def get_permissions(page: int = 1, limit: int = 50):
                 "name": perm.name,
                 "label": perm.label
             })
-        
         return {
         "status": "success",
             "data": {
@@ -2956,7 +3127,7 @@ async def get_permissions(page: int = 1, limit: int = 50):
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to retrieve permissions: {str(e)}"
         }
@@ -2989,7 +3160,6 @@ async def create_permission(permission_data: dict):
             name=name,
             label=label
         )
-        
         return {
             "status": "success",
             "message": "Permission created successfully",
@@ -3000,7 +3170,7 @@ async def create_permission(permission_data: dict):
             }
         }
     except Exception as e:
-        return {
+            return {
             "status": "error",
             "message": f"Failed to create permission: {str(e)}"
         }
