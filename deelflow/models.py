@@ -239,7 +239,7 @@ class Campaign(models.Model):
 
     name = models.CharField(max_length=255)
     campaign_type = models.CharField(max_length=100, default="new")
-    channel = models.CharField(max_length=20, choices=CHANNEL_CHOICES, default="email")
+    channel = models.CharField(max_length=500, default="[]", blank=True)   # store ["email", "sms", "phone"]
     budget = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     scheduled_at = models.DateTimeField(null=True, blank=True)
 
