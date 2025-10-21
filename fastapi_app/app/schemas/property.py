@@ -66,6 +66,7 @@ class PropertyUpdate(BaseModel):
     # Additional Information
     description: Optional[str] = None
     seller_notes: Optional[str] = None
+    status: Optional[str] = None
 
 class PropertyResponse(BaseModel):
     """Property response model - complete schema matching frontend DefaultValues"""
