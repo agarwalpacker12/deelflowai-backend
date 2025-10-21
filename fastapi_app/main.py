@@ -2243,8 +2243,62 @@ async def update_campaign(campaign_id: int, campaign_data: CampaignUpdate):
         
         campaign = await sync_to_async(Campaign.objects.get)(id=campaign_id)
         
-        # Update campaign fields
-        for field, value in campaign_data.dict(exclude_unset=True).items():
+        # Update campaign fields with proper handling for special fields
+        update_data = campaign_data.dict(exclude_unset=True)
+        
+        # Handle channel field - convert list to single string for database storage
+        if 'channel' in update_data and update_data['channel'] is not None:
+            channel = update_data['channel']
+            if isinstance(channel, list):
+                # Take the first channel if multiple are provided (database constraint)
+                channel = channel[0] if channel else "email"
+            campaign.channel = channel
+            del update_data['channel']
+        
+        # Handle geographic_scope_values - convert list to string
+        if 'geographic_scope_values' in update_data and update_data['geographic_scope_values'] is not None:
+            geographic_scope_values = update_data['geographic_scope_values']
+            if isinstance(geographic_scope_values, list):
+                campaign.geographic_scope_values = str(geographic_scope_values)
+            else:
+                campaign.geographic_scope_values = geographic_scope_values
+            del update_data['geographic_scope_values']
+        
+        # Handle distress_indicators - convert list to string
+        if 'distress_indicators' in update_data and update_data['distress_indicators'] is not None:
+            distress_indicators = update_data['distress_indicators']
+            if isinstance(distress_indicators, list):
+                campaign.distress_indicators = str(distress_indicators)
+            else:
+                campaign.distress_indicators = distress_indicators
+            del update_data['distress_indicators']
+        
+        # Handle property_year_built fields - convert to int or None
+        if 'property_year_built_min' in update_data and update_data['property_year_built_min'] is not None:
+            value = update_data['property_year_built_min']
+            campaign.property_year_built_min = int(value) if value and str(value).strip() != "" else None
+            del update_data['property_year_built_min']
+        
+        if 'property_year_built_max' in update_data and update_data['property_year_built_max'] is not None:
+            value = update_data['property_year_built_max']
+            campaign.property_year_built_max = int(value) if value and str(value).strip() != "" else None
+            del update_data['property_year_built_max']
+        
+        # Handle scheduled_at - convert string to datetime
+        if 'scheduled_at' in update_data and update_data['scheduled_at'] is not None:
+            from datetime import datetime
+            scheduled_at_str = update_data['scheduled_at']
+            try:
+                # Try parsing the datetime string
+                scheduled_at = datetime.fromisoformat(scheduled_at_str.replace('Z', '+00:00'))
+                campaign.scheduled_at = scheduled_at
+            except ValueError:
+                # If parsing fails, set to None
+                campaign.scheduled_at = None
+            del update_data['scheduled_at']
+        
+        # Update remaining fields normally
+        for field, value in update_data.items():
             if hasattr(campaign, field):
                 setattr(campaign, field, value)
         
