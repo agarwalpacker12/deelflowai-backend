@@ -1823,11 +1823,15 @@ async def get_campaigns():
                     distress = ast.literal_eval(distress)
             except Exception:
                 distress = []
-            channel_val = campaign.channel
-            if isinstance(channel_val, list):
-                channel_out = channel_val
-            else:
-                channel_out = [channel_val] if channel_val else []
+            # Parse channel from string to list
+            try:
+                channel_val = campaign.channel
+                if isinstance(channel_val, str):
+                    channel_out = ast.literal_eval(channel_val) if channel_val else []
+                else:
+                    channel_out = channel_val if channel_val else []
+            except Exception:
+                channel_out = []
             campaign_data.append({
                 "id": campaign.id,
                 "name": campaign.name,
@@ -2019,11 +2023,15 @@ async def get_campaign(campaign_id: int):
         except Exception:
             distress = []
             
-        channel_val = campaign.channel
-        if isinstance(channel_val, list):
-            channel_out = channel_val
-        else:
-            channel_out = [channel_val] if channel_val else []
+        # Parse channel from string to list
+        try:
+            channel_val = campaign.channel
+            if isinstance(channel_val, str):
+                channel_out = ast.literal_eval(channel_val) if channel_val else []
+            else:
+                channel_out = channel_val if channel_val else []
+        except Exception:
+            channel_out = []
         
         campaign_data = {
                 "id": campaign.id,
@@ -2098,10 +2106,10 @@ async def create_campaign(campaign_data: CampaignCreate):
         from deelflow.models import Campaign
         print("✓ Django Campaign model imported successfully")
         
-        # Convert channel to string if it's a list
+        # Convert channel list to string for database storage
         channel = campaign_data.channel
         if isinstance(channel, list):
-            channel = channel[0] if channel else "email"
+            channel = str(channel) if channel else "[]"
         print(f"✓ Channel processed: {channel}")
         
         # Handle geographic scope - support both object and separate field formats
@@ -2246,12 +2254,11 @@ async def update_campaign(campaign_id: int, campaign_data: CampaignUpdate):
         # Update campaign fields with proper handling for special fields
         update_data = campaign_data.dict(exclude_unset=True)
         
-        # Handle channel field - convert list to single string for database storage
+        # Handle channel field - convert list to string for database storage
         if 'channel' in update_data and update_data['channel'] is not None:
             channel = update_data['channel']
             if isinstance(channel, list):
-                # Take the first channel if multiple are provided (database constraint)
-                channel = channel[0] if channel else "email"
+                channel = str(channel) if channel else "[]"
             campaign.channel = channel
             del update_data['channel']
         
