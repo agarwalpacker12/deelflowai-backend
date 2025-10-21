@@ -1178,30 +1178,133 @@ async def create_property(property_data: PropertyCreate):
             "message": f"Failed to create property: {str(e)}"
         }
 
-@app.get("/api/properties/{property_id}/", tags=["Properties"])
+@app.get("/api/properties/{property_id}/", 
+         tags=["Properties"],
+         summary="Get Property by ID",
+         description="Retrieves a specific property by its ID with all associated data including financial details, property specifications, and location information.",
+         response_description="Property details with all fields",
+         responses={
+             200: {
+                 "description": "Property retrieved successfully",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "success",
+                             "data": {
+                                 "id": 1,
+                                 "street_address": "123 Main Street",
+                                 "unit_apt": "Apt 2B",
+                                 "city": "Miami",
+                                 "state": "FL",
+                                 "zip_code": "33101",
+                                 "county": "Miami-Dade",
+                                 "property_type": "residential",
+                                 "bedrooms": 3,
+                                 "bathrooms": 2.5,
+                                 "square_feet": 1800,
+                                 "lot_size": 0.25,
+                                 "year_built": 1995,
+                                 "purchase_price": 250000.0,
+                                 "arv": 350000.0,
+                                 "repair_estimate": 25000.0,
+                                 "holding_costs": 5000.0,
+                                 "transaction_type": "wholesale",
+                                 "assignment_fee": 10000.0,
+                                 "property_description": "Beautiful single-family home in great neighborhood",
+                                 "seller_notes": "Motivated seller, needs quick sale",
+                                 "images": ["image1.jpg", "image2.jpg"],
+                                 "status": "active",
+                                 "created_at": "2024-10-13T07:34:07.710903+00:00",
+                                 "updated_at": "2024-10-18T06:28:14.415806+00:00"
+                             }
+                         }
+                     }
+                 }
+             },
+             404: {
+                 "description": "Property not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Property not found"
+                         }
+                     }
+                 }
+             },
+             500: {
+                 "description": "Internal server error",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Failed to retrieve property: Database connection error"
+                         }
+                     }
+                 }
+             }
+         })
 async def get_property(property_id: int):
-    """Get a specific property by ID - Frontend compatible endpoint"""
+    """
+    **Get Property by ID**
+    
+    Retrieves a specific property by its ID with comprehensive data including:
+    
+    **Location Data:**
+    - Street address and unit/apartment information
+    - City, state, zip code, and county details
+    
+    **Property Specifications:**
+    - Property type, bedrooms, bathrooms
+    - Square footage and lot size
+    - Year built and property description
+    
+    **Financial Information:**
+    - Purchase price and after repair value (ARV)
+    - Repair estimates and holding costs
+    - Transaction type and assignment fees
+    
+    **Additional Details:**
+    - Seller notes and property images
+    - Status and timestamps
+    
+    **Parameters:**
+    - **property_id** (int): The unique identifier of the property to retrieve
+    
+    **Returns:**
+    - **200**: Property data with all fields populated
+    - **404**: Property not found
+    - **500**: Server error during retrieval
+    """
     try:
         from deelflow.models import Property
         
         property = await sync_to_async(Property.objects.get)(id=property_id)
         
         return {
-        "status": "success",
-        "data": {
+            "status": "success",
+            "data": {
                 "id": property.id,
-                "address": property.address,
+                "street_address": property.address,
+                "unit_apt": property.unit_apt,
                 "city": property.city,
                 "state": property.state,
-                "zipcode": property.zipcode,
+                "zip_code": property.zipcode,
+                "county": property.county,
                 "property_type": property.property_type,
                 "bedrooms": property.bedrooms,
                 "bathrooms": property.bathrooms,
                 "square_feet": property.square_feet,
                 "lot_size": property.lot_size,
                 "year_built": property.year_built,
-                "price": float(property.price) if property.price else None,
-                "description": property.description,
+                "purchase_price": float(property.price) if property.price else None,
+                "arv": float(property.arv) if property.arv else None,
+                "repair_estimate": float(property.repair_estimate) if property.repair_estimate else None,
+                "holding_costs": float(property.holding_costs) if property.holding_costs else None,
+                "transaction_type": property.transaction_type,
+                "assignment_fee": float(property.assignment_fee) if property.assignment_fee else None,
+                "property_description": property.description,
+                "seller_notes": property.seller_notes,
                 "images": property.images,
                 "status": property.status,
                 "created_at": property.created_at.isoformat(),
