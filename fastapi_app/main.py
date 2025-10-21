@@ -1413,9 +1413,106 @@ async def delete_property_save(property_save_id: int):
 
 # ==================== CAMPAIGN ENDPOINTS (Frontend Compatible) ====================
 
-@app.get("/campaigns/", tags=["Campaigns"])
+@app.get("/campaigns/", 
+         tags=["Campaigns"],
+         summary="Get All Campaigns",
+         description="Retrieves all campaigns with normalized array fields and comprehensive data including seller finder, buyer finder, and demographic information.",
+         response_description="List of campaigns with pagination information",
+         responses={
+             200: {
+                 "description": "Campaigns retrieved successfully",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "success",
+                             "data": [
+                                 {
+                                     "id": 1,
+                                     "name": "Sample Campaign",
+                                     "campaign_type": "seller_finder",
+                                     "channel": ["email", "phone"],
+                                     "budget": 5000.0,
+                                     "status": "active",
+                                     "geographic_scope_values": ["Miami-Dade", "Broward"],
+                                     "distress_indicators": ["Pre-foreclosure", "Divorce"]
+                                 }
+                             ],
+                             "total": 25,
+                             "page": 1,
+                             "limit": 20
+                         }
+                     }
+                 }
+             },
+             500: {
+                 "description": "Internal server error",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Failed to retrieve campaigns: Database connection error",
+                             "data": [],
+                             "total": 0,
+                             "page": 1,
+                             "limit": 20
+                         }
+                     }
+                 }
+             }
+         })
 async def get_campaigns():
-    """Get all campaigns - Frontend compatible endpoint"""
+    """
+    **Get All Campaigns**
+    
+    Retrieves all campaigns with comprehensive data including:
+    
+    **Core Campaign Data:**
+    - Basic information (name, type, budget, status)
+    - Scheduling and content details
+    - Geographic scope and targeting parameters
+    
+    **Seller Finder Data:**
+    - Geographic targeting (country, state, counties, city, districts, parish)
+    - Property criteria (year built range, keywords)
+    - Additional seller-specific filters
+    
+    **Buyer Finder Data:**
+    - Geographic targeting for buyers
+    - Demographic filters (age range, ethnicity, salary, marital status)
+    - Employment and home ownership status
+    
+    **Data Normalization:**
+    - `channel` is always returned as an array
+    - `geographic_scope_values` and `distress_indicators` are parsed from stored strings
+    - All datetime fields are returned in ISO format
+    
+    **Returns:**
+    - **200**: List of campaigns with pagination information
+    - **500**: Server error during retrieval
+    
+    **Response Format:**
+    ```json
+    {
+        "status": "success",
+        "data": [
+            {
+                "id": 1,
+                "name": "Q4 Marketing Campaign",
+                "campaign_type": "seller_finder",
+                "channel": ["email", "phone"],
+                "budget": 10000.0,
+                "status": "active",
+                "geographic_scope_values": ["Miami-Dade", "Broward"],
+                "distress_indicators": ["Pre-foreclosure", "Divorce"],
+                // ... all other campaign fields
+            }
+        ],
+        "total": 25,
+        "page": 1,
+        "limit": 20
+    }
+    ```
+    """
     try:
         from deelflow.models import Campaign
         campaigns = await sync_to_async(list)(Campaign.objects.all())
@@ -1477,6 +1574,229 @@ async def get_campaigns():
             "total": 0,
             "page": 1,
             "limit": 20
+        }
+
+@app.get("/campaigns/{campaign_id}/", 
+         tags=["Campaigns"],
+         summary="Get Campaign by ID",
+         description="Retrieves a specific campaign by its ID with all associated data including seller finder, buyer finder, and demographic information.",
+         response_description="Campaign details with normalized array fields",
+         responses={
+             200: {
+                 "description": "Campaign retrieved successfully",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "success",
+                             "data": {
+                                 "id": 1,
+                                 "name": "Sample Campaign",
+                                 "campaign_type": "seller_finder",
+                                 "channel": ["email", "phone"],
+                                 "budget": 5000.0,
+                                 "scheduled_at": "2024-12-25T10:00:00+00:00",
+                                 "subject_line": "Investment Opportunity",
+                                 "email_content": "Discover amazing property deals...",
+                                 "use_ai_personalization": True,
+                                 "status": "active",
+                                 "geographic_scope_type": "counties",
+                                 "geographic_scope_values": ["Miami-Dade", "Broward"],
+                                 "location": "Miami, FL",
+                                 "property_type": "residential",
+                                 "minimum_equity": 75000.0,
+                                 "min_price": 300000.0,
+                                 "max_price": 800000.0,
+                                 "distress_indicators": ["Pre-foreclosure", "Divorce"],
+                                 "created_at": "2024-10-13T07:34:07.710903+00:00",
+                                 "updated_at": "2024-10-18T06:28:14.415806+00:00",
+                                 "seller_country": "USA",
+                                 "seller_state": "Florida",
+                                 "seller_counties": "Miami-Dade",
+                                 "seller_city": "Miami",
+                                 "property_year_built_min": 1990,
+                                 "property_year_built_max": 2020,
+                                 "seller_keywords": "investment, rental",
+                                 "buyer_country": "USA",
+                                 "buyer_state": "Florida",
+                                 "age_range": "25-45",
+                                 "salary_range": "50000-150000",
+                                 "marital_status": "any",
+                                 "employment_status": "employed",
+                                 "home_ownership_status": "any"
+                             }
+                         }
+                     }
+                 }
+             },
+             404: {
+                 "description": "Campaign not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Campaign not found"
+                         }
+                     }
+                 }
+             },
+             500: {
+                 "description": "Internal server error",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Failed to retrieve campaign: Database connection error"
+                         }
+                     }
+                 }
+             }
+         })
+async def get_campaign(campaign_id: int):
+    """
+    **Get Campaign by ID**
+    
+    Retrieves a specific campaign by its ID with comprehensive data including:
+    
+    **Core Campaign Data:**
+    - Basic information (name, type, budget, status)
+    - Scheduling and content details
+    - Geographic scope and targeting parameters
+    
+    **Seller Finder Data:**
+    - Geographic targeting (country, state, counties, city, districts, parish)
+    - Property criteria (year built range, keywords)
+    - Additional seller-specific filters
+    
+    **Buyer Finder Data:**
+    - Geographic targeting for buyers
+    - Demographic filters (age range, ethnicity, salary, marital status)
+    - Employment and home ownership status
+    
+    **Data Normalization:**
+    - `channel` is always returned as an array
+    - `geographic_scope_values` and `distress_indicators` are parsed from stored strings
+    - All datetime fields are returned in ISO format
+    
+    **Parameters:**
+    - **campaign_id** (int): The unique identifier of the campaign to retrieve
+    
+    **Returns:**
+    - **200**: Campaign data with all fields populated
+    - **404**: Campaign not found
+    - **500**: Server error during retrieval
+    
+    **Example Usage:**
+    ```
+    GET /campaigns/123/
+    ```
+    
+    **Response Format:**
+    ```json
+    {
+        "status": "success",
+        "data": {
+            "id": 123,
+            "name": "Q4 Marketing Campaign",
+            "campaign_type": "seller_finder",
+            "channel": ["email", "phone"],
+            "budget": 10000.0,
+            "status": "active",
+            "geographic_scope_values": ["Miami-Dade", "Broward"],
+            "distress_indicators": ["Pre-foreclosure", "Divorce"],
+            // ... all other campaign fields
+        }
+    }
+    ```
+    """
+    try:
+        from deelflow.models import Campaign
+        import ast
+        
+        campaign = await sync_to_async(Campaign.objects.get)(id=campaign_id)
+        
+        # Normalize fields stored as strings in DB
+        try:
+            geo_values = campaign.geographic_scope_values
+            if isinstance(geo_values, str):
+                geo_values = ast.literal_eval(geo_values)
+        except Exception:
+            geo_values = []
+            
+        try:
+            distress = campaign.distress_indicators
+            if isinstance(distress, str):
+                distress = ast.literal_eval(distress)
+        except Exception:
+            distress = []
+            
+        channel_val = campaign.channel
+        if isinstance(channel_val, list):
+            channel_out = channel_val
+        else:
+            channel_out = [channel_val] if channel_val else []
+        
+        campaign_data = {
+            "id": campaign.id,
+            "name": campaign.name,
+            "campaign_type": campaign.campaign_type,
+            "channel": channel_out,
+            "budget": float(campaign.budget) if campaign.budget else None,
+            "scheduled_at": campaign.scheduled_at.isoformat() if campaign.scheduled_at else None,
+            "subject_line": campaign.subject_line,
+            "email_content": campaign.email_content,
+            "use_ai_personalization": campaign.use_ai_personalization,
+            "status": campaign.status,
+            "geographic_scope_type": campaign.geographic_scope_type,
+            "geographic_scope_values": geo_values,
+            "location": campaign.location,
+            "property_type": campaign.property_type,
+            "minimum_equity": float(campaign.minimum_equity) if campaign.minimum_equity else None,
+            "min_price": float(campaign.min_price) if campaign.min_price else None,
+            "max_price": float(campaign.max_price) if campaign.max_price else None,
+            "distress_indicators": distress,
+            "created_at": campaign.created_at.isoformat(),
+            "updated_at": campaign.updated_at.isoformat() if campaign.updated_at else None,
+            # Seller Finder - Geographic Details
+            "seller_country": campaign.seller_country,
+            "seller_state": campaign.seller_state,
+            "seller_counties": campaign.seller_counties,
+            "seller_city": campaign.seller_city,
+            "seller_districts": campaign.seller_districts,
+            "seller_parish": campaign.seller_parish,
+            # Seller Finder - Additional Fields
+            "property_year_built_min": campaign.property_year_built_min,
+            "property_year_built_max": campaign.property_year_built_max,
+            "seller_keywords": campaign.seller_keywords,
+            # Buyer Finder - Geographic Details
+            "buyer_country": campaign.buyer_country,
+            "buyer_state": campaign.buyer_state,
+            "buyer_counties": campaign.buyer_counties,
+            "buyer_city": campaign.buyer_city,
+            "buyer_districts": campaign.buyer_districts,
+            "buyer_parish": campaign.buyer_parish,
+            # Buyer Finder - Demographic Details
+            "last_qualification": campaign.last_qualification,
+            "age_range": campaign.age_range,
+            "ethnicity": campaign.ethnicity,
+            "salary_range": campaign.salary_range,
+            "marital_status": campaign.marital_status,
+            "employment_status": campaign.employment_status,
+            "home_ownership_status": campaign.home_ownership_status
+        }
+        
+        return {
+            "status": "success",
+            "data": campaign_data
+        }
+    except Campaign.DoesNotExist:
+        return {
+            "status": "error",
+            "message": "Campaign not found"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to retrieve campaign: {str(e)}"
         }
 
 @app.post("/campaigns/", tags=["Campaigns"])
