@@ -1606,26 +1606,25 @@ async def get_property_saves(params: dict = None):
 async def get_property_save(property_save_id: int):
     """Get a specific property save by ID - Frontend compatible endpoint"""
     try:
-        from deelflow.models import PropertySave
+        from deelflow.models import SavedProperty
         
-        property_save = await sync_to_async(PropertySave.objects.get)(id=property_save_id)
+        property_save = await sync_to_async(SavedProperty.objects.get)(id=property_save_id)
         return {
             "status": "success",
             "data": {
                 "id": property_save.id,
-                "property_id": property_save.property_id,
-                "user_id": property_save.user_id,
-                "saved_at": property_save.saved_at.isoformat(),
-                "notes": property_save.notes
+                "property_id": property_save.property.id,
+                "user_id": property_save.user.id,
+                "created_at": property_save.created_at.isoformat()
             }
         }
-    except PropertySave.DoesNotExist:
-            return {
+    except SavedProperty.DoesNotExist:
+        return {
             "status": "error",
             "message": "Property save not found"
         }
     except Exception as e:
-            return {
+        return {
             "status": "error",
             "message": f"Failed to retrieve property save: {str(e)}"
         }
@@ -1634,25 +1633,50 @@ async def get_property_save(property_save_id: int):
 async def create_property_save(property_save_data: dict):
     """Create a new property save - Frontend compatible endpoint"""
     try:
-        from deelflow.models import PropertySave
+        from deelflow.models import SavedProperty, Property, User
         
-        property_save = await sync_to_async(PropertySave.objects.create)(
-            property_id=property_save_data.get("property_id"),
-            user_id=property_save_data.get("user_id"),
-            notes=property_save_data.get("notes", "")
+        property_id = property_save_data.get("property_id")
+        user_id = property_save_data.get("user_id", 1)  # Default to user 1 if not provided
+        notes = property_save_data.get("notes", "")
+        
+        if not property_id:
+            return {
+                "status": "error",
+                "message": "Property ID is required"
+            }
+        
+        # Get property and user objects
+        property_obj = await sync_to_async(Property.objects.get)(id=property_id)
+        user_obj = await sync_to_async(User.objects.get)(id=user_id)
+        
+        # Create saved property
+        saved_property = await sync_to_async(SavedProperty.objects.create)(
+            property=property_obj,
+            user=user_obj
         )
+        
         return {
             "status": "success",
             "message": "Property save created successfully",
             "data": {
-                "id": property_save.id,
-                "property_id": property_save.property_id,
-                "user_id": property_save.user_id,
-                "created_at": timezone.now().isoformat()
+                "id": saved_property.id,
+                "property_id": saved_property.property.id,
+                "user_id": saved_property.user.id,
+                "created_at": saved_property.created_at.isoformat()
             }
         }
+    except Property.DoesNotExist:
+        return {
+            "status": "error",
+            "message": "Property not found"
+        }
+    except User.DoesNotExist:
+        return {
+            "status": "error",
+            "message": "User not found"
+        }
     except Exception as e:
-            return {
+        return {
             "status": "error",
             "message": f"Failed to create property save: {str(e)}"
         }
@@ -2981,7 +3005,7 @@ async def get_role(role_id: int):
                  }
              }
          })
-async def create_role(role_data: RoleCreate):
+async def create_role(role_data: dict):
     """
     **Create Role**
     
@@ -2990,24 +3014,32 @@ async def create_role(role_data: RoleCreate):
     **Request Body:**
     - **name** (str): Unique role name (required)
     - **label** (str): Human-readable role label (required)
-    - **permission_ids** (List[int]): List of permission IDs to assign (optional)
+    - **permissions** (List[dict]): Complex permission structure from frontend (optional)
     
     **Example Request:**
     ```json
     {
         "name": "admin",
         "label": "Administrator",
-        "permission_ids": [1, 2, 3]
+        "permissions": [
+            {
+                "group": "Users",
+                "count": "2 / 4",
+                "permissions": [
+                    {"id": 1, "name": "create_users", "label": "Create Users", "enabled": true}
+                ]
+            }
+        ]
     }
     ```
     """
     try:
         from deelflow.models import Role, Permission
         
-        # Extract data from Pydantic model
-        name = role_data.name
-        label = role_data.label
-        permission_ids = role_data.permission_ids
+        # Extract data from dict
+        name = role_data.get("name")
+        label = role_data.get("label")
+        permissions_data = role_data.get("permissions", [])
         
         if not name or not label:
             return {
@@ -3029,6 +3061,14 @@ async def create_role(role_data: RoleCreate):
             label=label
         )
         
+        # Extract permission IDs from complex structure
+        permission_ids = []
+        for group in permissions_data:
+            if isinstance(group, dict) and "permissions" in group:
+                for perm in group["permissions"]:
+                    if isinstance(perm, dict) and "id" in perm and perm.get("enabled", False):
+                        permission_ids.append(perm["id"])
+        
         # Add permissions if provided
         if permission_ids:
             permissions = await sync_to_async(list)(Permission.objects.filter(id__in=permission_ids))
@@ -3038,27 +3078,28 @@ async def create_role(role_data: RoleCreate):
         role = await sync_to_async(Role.objects.prefetch_related('permissions').get)(id=role.id)
         
         # Get permissions data
-        permissions_data = []
+        permissions_response = []
         for perm in role.permissions.all():
-            permissions_data.append({
+            permissions_response.append({
                 "id": perm.id,
                 "name": perm.name,
                 "label": perm.label
             })
+        
         return {
-        "status": "success",
+            "status": "success",
             "message": "Role created successfully",
-        "data": {
+            "data": {
                 "id": role.id,
                 "name": role.name,
                 "label": role.label,
-                "permissions": permissions_data,
+                "permissions": permissions_response,
                 "created_at": role.created_at.isoformat(),
                 "updated_at": role.updated_at.isoformat()
             }
         }
     except Exception as e:
-            return {
+        return {
             "status": "error",
             "message": f"Failed to create role: {str(e)}"
         }
@@ -3089,7 +3130,23 @@ async def update_role(role_id: int, role_data: dict):
         await sync_to_async(role.save)()
         
         # Update permissions if provided
-        if "permission_ids" in role_data:
+        if "permissions" in role_data:
+            permissions_data = role_data["permissions"]
+            
+            # Extract permission IDs from complex structure
+            permission_ids = []
+            for group in permissions_data:
+                if isinstance(group, dict) and "permissions" in group:
+                    for perm in group["permissions"]:
+                        if isinstance(perm, dict) and "id" in perm and perm.get("enabled", False):
+                            permission_ids.append(perm["id"])
+            
+            if permission_ids:
+                permissions = await sync_to_async(list)(Permission.objects.filter(id__in=permission_ids))
+                await sync_to_async(role.permissions.set)(permissions)
+            else:
+                await sync_to_async(role.permissions.clear)()
+        elif "permission_ids" in role_data:
             permission_ids = role_data["permission_ids"]
             if permission_ids:
                 permissions = await sync_to_async(list)(Permission.objects.filter(id__in=permission_ids))
