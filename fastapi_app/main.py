@@ -138,6 +138,10 @@ tags_metadata = [
         "name": "Organizations",
         "description": "Organization management and status endpoints.",
     },
+    {
+        "name": "Payments",
+        "description": "Payment processing, subscription management, and billing endpoints using Stripe integration.",
+    },
 ]
 
 # Update the app with tags metadata
@@ -3211,6 +3215,48 @@ async def delete_role(role_id: int):
             "message": f"Failed to delete role: {str(e)}"
         }
 
+# Add legacy endpoints for frontend compatibility
+@app.get("/get_roles/", tags=["Role Management"])
+async def get_roles_legacy():
+    """Legacy endpoint for frontend compatibility"""
+    return await get_roles(page=1, limit=100)
+
+@app.get("/get_permissions/", tags=["Role Management"])
+async def get_permissions_legacy():
+    """Legacy endpoint for frontend compatibility"""
+    return await get_permissions(page=1, limit=100)
+
+# Add missing endpoints that frontend is calling
+@app.get("/ai_metrics/", tags=["AI Services"])
+async def get_ai_metrics_endpoint():
+    """Get AI metrics - Frontend expected endpoint"""
+    try:
+        ai_metrics = await get_ai_metrics()
+        return {
+            "status": "success",
+            "data": ai_metrics
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to fetch AI metrics: {str(e)}"
+        }
+
+@app.get("/performance/", tags=["Analytics"])
+async def get_performance_endpoint():
+    """Get performance metrics - Frontend expected endpoint"""
+    try:
+        performance_metrics = await get_performance_metrics()
+        return {
+            "status": "success",
+            "data": performance_metrics
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to fetch performance metrics: {str(e)}"
+        }
+
 @app.get("/api/permissions/", tags=["Role Management"])
 async def get_permissions(page: int = 1, limit: int = 50):
     """Get all permissions with pagination"""
@@ -3291,6 +3337,270 @@ async def create_permission(permission_data: dict):
             return {
             "status": "error",
             "message": f"Failed to create permission: {str(e)}"
+        }
+
+# ==================== PAYMENT GATEWAY ENDPOINTS ====================
+
+@app.get("/subscription-packs/", tags=["Payments"])
+async def get_subscription_packages():
+    """
+    **Get Subscription Packages**
+    
+    Retrieves all available subscription packages from Stripe.
+    
+    **Returns:**
+    - List of subscription packages with pricing and features
+    - Package details including Stripe price IDs
+    """
+    try:
+        from app.services.payment_service import PaymentService
+        payment_service = PaymentService()
+        return await payment_service.get_subscription_packages()
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to get subscription packages: {str(e)}"
+        }
+
+@app.post("/create-checkout-session/", tags=["Payments"])
+async def create_checkout_session(request_data: dict):
+    """
+    **Create Stripe Checkout Session**
+    
+    Creates a Stripe checkout session for subscription purchase.
+    
+    **Request Body:**
+    - price_id: Stripe price ID for the subscription
+    - customer_id: Optional customer ID
+    - success_url: Optional success redirect URL
+    - cancel_url: Optional cancel redirect URL
+    
+    **Returns:**
+    - Checkout session URL and details
+    """
+    try:
+        from app.services.payment_service import PaymentService
+        payment_service = PaymentService()
+        
+        price_id = request_data.get("price_id")
+        if not price_id:
+            return {
+                "status": "error",
+                "message": "Price ID is required"
+            }
+        
+        return await payment_service.create_checkout_session(
+            price_id=price_id,
+            customer_id=request_data.get("customer_id"),
+            success_url=request_data.get("success_url"),
+            cancel_url=request_data.get("cancel_url")
+        )
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to create checkout session: {str(e)}"
+        }
+
+@app.post("/create-customer-portal-session/", tags=["Payments"])
+async def create_customer_portal_session(request_data: dict):
+    """
+    **Create Customer Portal Session**
+    
+    Creates a Stripe customer portal session for subscription management.
+    
+    **Request Body:**
+    - customer_id: Stripe customer ID
+    - return_url: Optional return URL
+    
+    **Returns:**
+    - Customer portal URL
+    """
+    try:
+        from app.services.payment_service import PaymentService
+        payment_service = PaymentService()
+        
+        customer_id = request_data.get("customer_id")
+        if not customer_id:
+            return {
+                "status": "error",
+                "message": "Customer ID is required"
+            }
+        
+        return await payment_service.create_customer_portal_session(
+            customer_id=customer_id,
+            return_url=request_data.get("return_url")
+        )
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to create customer portal session: {str(e)}"
+        }
+
+@app.post("/stripe-invoice/", tags=["Payments"])
+async def get_customer_invoices(request_data: dict):
+    """
+    **Get Customer Invoices**
+    
+    Retrieves customer's invoice history from Stripe.
+    
+    **Request Body:**
+    - customer_id: Stripe customer ID
+    - limit: Optional limit for number of invoices (default: 10)
+    
+    **Returns:**
+    - List of customer invoices
+    """
+    try:
+        from app.services.payment_service import PaymentService
+        payment_service = PaymentService()
+        
+        customer_id = request_data.get("customer_id")
+        if not customer_id:
+            return {
+                "status": "error",
+                "message": "Customer ID is required"
+            }
+        
+        return await payment_service.get_customer_invoices(
+            customer_id=customer_id,
+            limit=request_data.get("limit", 10)
+        )
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to get customer invoices: {str(e)}"
+        }
+
+@app.get("/current-subscription/", tags=["Payments"])
+async def get_current_subscription(customer_id: str = None):
+    """
+    **Get Current Subscription**
+    
+    Retrieves the customer's current active subscription.
+    
+    **Query Parameters:**
+    - customer_id: Stripe customer ID
+    
+    **Returns:**
+    - Current subscription details or null if no active subscription
+    """
+    try:
+        from app.services.payment_service import PaymentService
+        payment_service = PaymentService()
+        
+        if not customer_id:
+            return {
+                "status": "error",
+                "message": "Customer ID is required"
+            }
+        
+        return await payment_service.get_customer_subscription(customer_id)
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to get current subscription: {str(e)}"
+        }
+
+@app.get("/total-revenue/", tags=["Payments"])
+async def get_total_revenue():
+    """
+    **Get Total Revenue**
+    
+    Retrieves total revenue metrics from Stripe.
+    
+    **Returns:**
+    - Total revenue, MRR, customer count, and other metrics
+    """
+    try:
+        from app.services.payment_service import PaymentService
+        payment_service = PaymentService()
+        return await payment_service.get_revenue_metrics()
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to get revenue metrics: {str(e)}"
+        }
+
+@app.get("/monthly-profit/", tags=["Payments"])
+async def get_monthly_profit():
+    """
+    **Get Monthly Profit**
+    
+    Retrieves monthly profit and revenue data.
+    
+    **Returns:**
+    - Monthly profit metrics and trends
+    """
+    try:
+        from app.services.payment_service import PaymentService
+        payment_service = PaymentService()
+        return await payment_service.get_revenue_metrics()
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to get monthly profit: {str(e)}"
+        }
+
+@app.post("/verify-payment/", tags=["Payments"])
+async def verify_payment(request_data: dict):
+    """
+    **Verify Payment**
+    
+    Verifies payment completion using Stripe session ID.
+    
+    **Request Body:**
+    - session_id: Stripe checkout session ID
+    
+    **Returns:**
+    - Payment verification status and details
+    """
+    try:
+        from app.services.payment_service import PaymentService
+        payment_service = PaymentService()
+        
+        session_id = request_data.get("session_id")
+        if not session_id:
+            return {
+                "status": "error",
+                "message": "Session ID is required"
+            }
+        
+        return await payment_service.verify_payment(session_id)
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to verify payment: {str(e)}"
+        }
+
+@app.post("/create-payment-intent/", tags=["Payments"])
+async def create_payment_intent(request_data: PaymentIntentCreate):
+    """
+    **Create Payment Intent**
+    
+    Creates a Stripe payment intent for one-time payments.
+    
+    **Request Body:**
+    - amount: Payment amount
+    - currency: Currency code (default: usd)
+    - metadata: Optional metadata
+    - description: Optional description
+    
+    **Returns:**
+    - Payment intent with client secret
+    """
+    try:
+        from app.services.payment_service import PaymentService
+        payment_service = PaymentService()
+        
+        return await payment_service.create_payment_intent(
+            amount=request_data.amount,
+            currency=request_data.currency,
+            metadata=request_data.metadata
+        )
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to create payment intent: {str(e)}"
         }
 
 if __name__ == "__main__":
