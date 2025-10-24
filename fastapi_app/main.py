@@ -2176,17 +2176,15 @@ async def create_campaign(campaign_data: CampaignCreate):
             print("✓ No scheduled_at provided")
         
         # Create campaign in Django database
-        try:
-            # Test if the issue is with sync_to_async
-            print("About to create campaign...")
-            print("Creating campaign with data:")
-            print(f"  - name: {campaign_data.name}")
-            print(f"  - scheduled_at: {scheduled_at}")
-            print(f"  - channel: {channel}")
-            
-            from django.utils import timezone
-            
-            campaign = await sync_to_async(Campaign.objects.create)(
+        print("About to create campaign...")
+        print("Creating campaign with data:")
+        print(f"  - name: {campaign_data.name}")
+        print(f"  - scheduled_at: {scheduled_at}")
+        print(f"  - channel: {channel}")
+        
+        from django.utils import timezone
+        
+        campaign = await sync_to_async(Campaign.objects.create)(
             name=campaign_data.name,
             campaign_type=campaign_data.campaign_type,
             channel=channel,
@@ -2231,16 +2229,8 @@ async def create_campaign(campaign_data: CampaignCreate):
             marital_status=campaign_data.marital_status,
             employment_status=campaign_data.employment_status,
             home_ownership_status=campaign_data.home_ownership_status
-            )
-            print("✓ Campaign created successfully in database")
-        except Exception as db_error:
-            print(f"✗ Database error: {str(db_error)}")
-            import traceback
-            print(f"Database error traceback: {traceback.format_exc()}")
-        return {
-                "status": "error",
-                "message": f"Database error: {str(db_error)}"
-            }
+        )
+        print("✓ Campaign created successfully in database")
         
         print("✓ Preparing response...")
         return {
@@ -3294,6 +3284,83 @@ async def get_permissions(page: int = 1, limit: int = 50):
             return {
             "status": "error",
             "message": f"Failed to retrieve permissions: {str(e)}"
+        }
+
+@app.get("/api/permissions/grouped/", tags=["Role Management"])
+async def get_permissions_grouped():
+    """Get permissions grouped by categories with role assignments for table view"""
+    try:
+        from deelflow.models import Permission, Role
+        from collections import defaultdict
+        
+        # Get all permissions and roles
+        permissions_queryset = Permission.objects.all()
+        roles_queryset = Role.objects.all()
+        
+        permissions_list = await sync_to_async(list)(permissions_queryset)
+        roles_list = await sync_to_async(list)(roles_queryset)
+        
+        # Group permissions by category
+        permission_groups = defaultdict(list)
+        
+        for perm in permissions_list:
+            # Determine category based on permission name
+            category = "Other"
+            if any(keyword in perm.name.lower() for keyword in ['user', 'create_user', 'view_user', 'edit_user', 'delete_user']):
+                category = "User Management"
+            elif any(keyword in perm.name.lower() for keyword in ['billing', 'payment', 'invoice']):
+                category = "Billing"
+            elif any(keyword in perm.name.lower() for keyword in ['content', 'create_content', 'edit_content', 'delete_content']):
+                category = "Content Management"
+            elif any(keyword in perm.name.lower() for keyword in ['campaign', 'create_campaign', 'edit_campaign']):
+                category = "Campaigns"
+            elif any(keyword in perm.name.lower() for keyword in ['property', 'create_property', 'edit_property']):
+                category = "Properties"
+            elif any(keyword in perm.name.lower() for keyword in ['report', 'analytics', 'export']):
+                category = "Analytics & Reports"
+            elif any(keyword in perm.name.lower() for keyword in ['role', 'permission']):
+                category = "Role Management"
+            elif any(keyword in perm.name.lower() for keyword in ['system', 'tenant', 'backup', 'landing', 'theme', 'domain']):
+                category = "System Administration"
+            elif any(keyword in perm.name.lower() for keyword in ['own', 'personal']):
+                category = "Own Data"
+            
+            # Get role assignments for this permission
+            role_assignments = []
+            for role in roles_list:
+                # Check if this role has this permission
+                has_permission = await sync_to_async(lambda: role.permissions.filter(id=perm.id).exists())()
+                role_assignments.append({
+                    "id": role.id,
+                    "name": role.name,
+                    "enabled": has_permission
+                })
+            
+            permission_groups[category].append({
+                "id": perm.id,
+                "name": perm.name,
+                "label": perm.label,
+                "roles": role_assignments
+            })
+        
+        # Convert to the expected format
+        permission_groups_list = []
+        for group_name, permissions in permission_groups.items():
+            permission_groups_list.append({
+                "group": group_name,
+                "permissions": permissions
+            })
+        
+        return {
+            "status": "success",
+            "data": {
+                "permission_groups": permission_groups_list
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to fetch grouped permissions: {str(e)}"
         }
 
 @app.post("/api/permissions/", tags=["Role Management"])
