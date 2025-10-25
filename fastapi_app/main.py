@@ -158,7 +158,14 @@ app.add_middleware(
         "http://127.0.0.1:5175",
         "http://127.0.0.1:3000",
         "http://dev.deelflowai.com:8140",
-        "http://dev.deelflowai.com:8000"  # Keep old port for compatibility
+        "http://dev.deelflowai.com:8000",
+        "http://dev.deelflowai.com/register",
+        "https://dev.deelflowai.com/login",
+        
+        "http://apps.deelflowai.com/register",
+        "https://apps.deelflowai.com/login" 
+        
+         # Keep old port for compatibility
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
