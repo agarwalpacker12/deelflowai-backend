@@ -3,7 +3,7 @@ DeelFlowAI FastAPI Application - Final Clean Version
 Completely organized with proper Swagger grouping and frontend compatibility
 """
 
-from fastapi import FastAPI, HTTPException, Request, Query
+from fastapi import FastAPI, HTTPException, Request, Query, Depends, Header, status
 from fastapi.params import Path as PathParam
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -18,6 +18,9 @@ from pathlib import Path
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 import ast
+
+# Import authentication dependencies
+from app.core.auth_middleware import get_current_user
 
 # Import schemas from their respective files
 from app.schemas.campaign import CampaignCreate, CampaignUpdate, CampaignResponse, CampaignListResponse
@@ -2929,33 +2932,71 @@ async def login(login_data: LoginRequest):
     - Token type (Bearer)
     - User information (id, email, name, role)
     - Authentication status
+    
+    **Error Responses:**
+    - 400: Invalid credentials (wrong password)
+    - 404: Email not registered (prompt to sign up)
     """
     try:
-        # Mock authentication (replace with actual authentication logic)
-        if login_data.email and login_data.password:
-                return {
-                "status": "success",
-                "data": {
-                    "tokens": {
-                        "access_token": "mock_jwt_token_12345",
-                        "token_type": "bearer"
-                    },
-                    "user": {
-                        "id": 1,
-                        "email": login_data.email,
-                        "first_name": "John",
-                        "last_name": "Doe",
-                        "role": "admin"
-                    }
-                }
-            }
-        else:
+        from deelflow.models import User
+        from app.core.security import check_password, create_access_token
+        from django.contrib.auth.hashers import check_password as django_check_password
+        
+        # Check if user exists
+        try:
+            user = await sync_to_async(User.objects.get)(email=login_data.email)
+        except User.DoesNotExist:
             return {
                 "status": "error",
-                "message": "Invalid credentials"
+                "message": "Email not registered. Please sign up first.",
+                "error_code": "EMAIL_NOT_FOUND"
             }
-    except Exception as e:
+        
+        # Verify password
+        if not django_check_password(login_data.password, user.password):
             return {
+                "status": "error",
+                "message": "Invalid email or password"
+            }
+        
+        # Check if user is active
+        if not user.is_active:
+            return {
+                "status": "error",
+                "message": "Account is inactive. Please contact support."
+            }
+        
+        # Generate JWT token
+        token_data = {
+            "user_id": user.id,
+            "email": user.email,
+            "role": user.role
+        }
+        access_token = create_access_token(data=token_data)
+        
+        return {
+            "status": "success",
+            "message": "Login successful",
+            "data": {
+                "tokens": {
+                    "access_token": access_token,
+                    "token_type": "bearer"
+                },
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "role": user.role,
+                    "is_verified": user.is_verified,
+                    "organization_id": user.organization_id if hasattr(user, 'organization_id') else None
+                }
+            }
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
             "status": "error",
             "message": f"Login failed: {str(e)}"
         }
@@ -2972,31 +3013,119 @@ async def register(register_data: RegisterRequest):
     - password: User's password
     - first_name: User's first name
     - last_name: User's last name
-    - role: User's role (optional)
+    - organization_id: Organization ID (optional, creates default if not provided)
     
     **Returns:**
     - Registration status
+    - JWT access token
     - User information
     - Success/error message
+    
+    **Error Responses:**
+    - 409: Email already registered
+    - 400: Missing required fields
     """
     try:
-        # Mock registration (replace with actual registration logic)
+        from deelflow.models import User, Organization
+        from app.core.security import hash_password, create_access_token
+        import uuid
+        
+        # Check if email already exists
+        existing_user = await sync_to_async(User.objects.filter)(email=register_data.email)
+        if await sync_to_async(existing_user.exists)():
+            return {
+                "status": "error",
+                "message": "Email already registered. Please sign in.",
+                "error_code": "EMAIL_EXISTS"
+            }
+        
+        # Get or create organization
+        organization_id = register_data.organization_id
+        if organization_id:
+            try:
+                organization = await sync_to_async(Organization.objects.get)(id=organization_id)
+            except Organization.DoesNotExist:
+                # Create default organization
+                organization = await sync_to_async(Organization.objects.create)(
+                    name=f"{register_data.first_name}'s Organization",
+                    slug=f"{register_data.first_name.lower()}-org",
+                    subscription_status="trial"
+                )
+        else:
+            # Create default organization for user
+            organization = await sync_to_async(Organization.objects.create)(
+                name=f"{register_data.first_name}'s Organization",
+                slug=f"{register_data.first_name.lower()}-org",
+                subscription_status="trial"
+            )
+        
+        # Hash password
+        hashed_password = hash_password(register_data.password)
+        
+        # Create user
+        user = await sync_to_async(User.objects.create)(
+            email=register_data.email,
+            first_name=register_data.first_name,
+            last_name=register_data.last_name,
+            password=hashed_password,
+            organization=organization,
+            role="user",
+            is_active=True,
+            is_verified=False
+        )
+        
+        # Generate JWT token
+        token_data = {
+            "user_id": user.id,
+            "email": user.email,
+            "role": user.role
+        }
+        access_token = create_access_token(data=token_data)
+        
         return {
-        "status": "success",
+            "status": "success",
             "message": "User registered successfully",
-        "data": {
-                "id": 1,
-                "email": register_data.email,
-                "first_name": register_data.first_name,
-                "last_name": register_data.last_name,
-                "role": "user"
+            "data": {
+                "tokens": {
+                    "access_token": access_token,
+                    "token_type": "bearer"
+                },
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "role": user.role,
+                    "is_verified": user.is_verified,
+                    "organization_id": organization.id
+                }
             }
         }
     except Exception as e:
-            return {
+        import traceback
+        traceback.print_exc()
+        return {
             "status": "error",
             "message": f"Registration failed: {str(e)}"
         }
+
+@app.post("/api/auth/logout", tags=["Authentication"])
+@app.post("/logout/", tags=["Authentication"])
+async def logout():
+    """
+    **User Logout**
+    
+    Logs out the current user. On the client side, this should clear the JWT token from localStorage.
+    
+    **Returns:**
+    - Success message
+    
+    **Note:** This is a client-side logout. The JWT token should be removed from the client's storage.
+    """
+    return {
+        "status": "success",
+        "message": "Logged out successfully"
+    }
 
 @app.get("/api/auth/me", tags=["Authentication"])
 async def get_current_user():
@@ -4159,11 +4288,17 @@ async def create_permission(permission_data: dict):
 # ==================== PAYMENT GATEWAY ENDPOINTS ====================
 
 @app.get("/subscription-packs/", tags=["Payments"])
-async def get_subscription_packages():
+async def get_subscription_packages(
+    current_user: dict = Depends(get_current_user)
+):
     """
     **Get Subscription Packages**
     
     Retrieves all available subscription packages from Stripe.
+    
+    **Authentication Required**
+    - User must be signed in to see available plans
+    - Include JWT token in Authorization header: `Bearer <token>`
     
     **Returns:**
     - List of subscription packages with pricing and features
@@ -4172,7 +4307,8 @@ async def get_subscription_packages():
     try:
         from app.services.payment_service import PaymentService
         payment_service = PaymentService()
-        return await payment_service.get_subscription_packages()
+        result = await payment_service.get_subscription_packages()
+        return result
     except Exception as e:
         return {
             "status": "error",
@@ -4180,23 +4316,36 @@ async def get_subscription_packages():
         }
 
 @app.post("/create-checkout-session/", tags=["Payments"])
-async def create_checkout_session(request_data: dict):
+async def create_checkout_session(
+    request_data: dict,
+    current_user: dict = Depends(get_current_user)
+):
     """
     **Create Stripe Checkout Session**
     
     Creates a Stripe checkout session for subscription purchase.
+    
+    **Authentication Required**
+    - User must be logged in to create payment session
+    - Include JWT token in Authorization header: `Bearer <token>`
     
     **Request Body:**
     - price_id: Stripe price ID for the subscription
     - customer_id: Optional customer ID
     - success_url: Optional success redirect URL
     - cancel_url: Optional cancel redirect URL
+    - payment_gateway: Payment gateway to use (stripe, paytm, etc.)
     
     **Returns:**
     - Checkout session URL and details
+    - Transaction saved to database
     """
     try:
         from app.services.payment_service import PaymentService
+        from deelflow.models import PaymentTransaction, User, SubscriptionPackage
+        import uuid
+        from datetime import datetime
+        
         payment_service = PaymentService()
         
         price_id = request_data.get("price_id")
@@ -4206,13 +4355,71 @@ async def create_checkout_session(request_data: dict):
                 "message": "Price ID is required"
             }
         
-        return await payment_service.create_checkout_session(
+        # Get user from authentication
+        user_id = current_user.get("user_id")
+        if not user_id:
+            return {
+                "status": "error",
+                "message": "User not found in token"
+            }
+        
+        # Get user and package info
+        user = await sync_to_async(User.objects.get)(id=user_id)
+        payment_gateway = request_data.get("payment_gateway", "stripe")
+        
+        # Create checkout session
+        session_result = await payment_service.create_checkout_session(
             price_id=price_id,
-            customer_id=request_data.get("customer_id"),
+            customer_id=request_data.get("customer_id", user.stripe_customer_id),
             success_url=request_data.get("success_url"),
             cancel_url=request_data.get("cancel_url")
         )
+        
+        # Save transaction to database
+        if session_result.get("status") == "success":
+            transaction_id = f"{payment_gateway}_{uuid.uuid4().hex[:16]}"
+            payment_data = session_result.get("data", {})
+            session_id = payment_data.get("session_id")
+            
+            # Try to get plan details if available
+            plan_name = "Unknown Plan"
+            amount = 0
+            currency = "USD"
+            
+            try:
+                # Get amount from Stripe price (would need to fetch)
+                # For now, we'll save with session_id
+                plan_name = f"Plan {price_id[-10:]}"
+            except:
+                pass
+            
+            # Create payment transaction record
+            transaction = await sync_to_async(PaymentTransaction.objects.create)(
+                user=user,
+                plan_id=price_id,
+                plan_name=plan_name,
+                amount=amount,  # Would need to fetch from Stripe
+                currency=currency,
+                payment_gateway=payment_gateway,
+                transaction_id=transaction_id,
+                payment_intent_id=session_id,
+                status="pending",
+                description=f"Payment for {plan_name}",
+                metadata={
+                    "session_id": session_id,
+                    "price_id": price_id
+                }
+            )
+            
+            # Update response with transaction info
+            session_result["data"]["transaction_id"] = transaction_id
+            session_result["data"]["user_id"] = user_id
+            session_result["message"] = "Checkout session created. Transaction saved."
+        
+        return session_result
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {
             "status": "error",
             "message": f"Failed to create checkout session: {str(e)}"
