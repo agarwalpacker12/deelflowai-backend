@@ -142,6 +142,22 @@ tags_metadata = [
         "name": "Payments",
         "description": "Payment processing, subscription management, and billing endpoints using Stripe integration.",
     },
+    {
+        "name": "Role Management",
+        "description": "Role-based access control (RBAC) endpoints for managing roles, permissions, and user-role assignments.",
+    },
+    {
+        "name": "Permissions",
+        "description": "Permission management endpoints for granular access control.",
+    },
+    {
+        "name": "ATTOM API",
+        "description": "Property data integration with ATTOM Data Solutions API.",
+    },
+    {
+        "name": "SignNow",
+        "description": "Electronic signature integration with SignNow API.",
+    },
 ]
 
 # Update the app with tags metadata
@@ -1736,6 +1752,131 @@ async def delete_property_save(property_save_id: int):
             "message": f"Failed to delete property save: {str(e)}"
         }
 
+# ==================== ATTOM API INTEGRATION ENDPOINTS ====================
+
+@app.get("/api/properties/attom/search/", tags=["Properties"])
+async def search_attom_properties(
+    address: Optional[str] = None,
+    city: Optional[str] = None,
+    state: Optional[str] = None,
+    zipcode: Optional[str] = None,
+    property_type: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    min_sqft: Optional[int] = None,
+    max_sqft: Optional[int] = None,
+    bedrooms: Optional[int] = None,
+    bathrooms: Optional[float] = None,
+    limit: int = 50,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    radius: Optional[int] = None
+):
+    """
+    **Search Properties from ATTOM API**
+    
+    Searches for properties using ATTOM Data Solutions API with comprehensive filtering options.
+    
+    **Query Parameters:**
+    - address: Property address
+    - city: City name
+    - state: State code (e.g., "FL", "CA")
+    - zip: ZIP code
+    - property_type: Type of property (single_family, multi_family, etc.)
+    - min_price: Minimum price filter
+    - max_price: Maximum price filter
+    - min_sqft: Minimum square footage
+    - max_sqft: Maximum square footage
+    - bedrooms: Number of bedrooms
+    - bathrooms: Number of bathrooms
+    - limit: Maximum number of results (default: 50)
+    
+    **Returns:**
+    - List of properties from ATTOM API
+    - Normalized property data matching internal structure
+    - Additional owner and market data
+    """
+    try:
+        from app.services.attom_service import attom_service
+        
+        result = attom_service.search_properties(
+            address=address,
+            city=city,
+            state=state,
+            zipcode=zipcode,
+            property_type=property_type,
+            min_price=min_price,
+            max_price=max_price,
+            min_sqft=min_sqft,
+            max_sqft=max_sqft,
+            bedrooms=bedrooms,
+            bathrooms=bathrooms,
+            limit=limit,
+            latitude=latitude,
+            longitude=longitude,
+            radius=radius
+        )
+        
+        return result
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to search ATTOM properties: {str(e)}",
+            "data": []
+        }
+
+@app.get("/api/properties/attom/details/{property_id}/", tags=["Properties"])
+async def get_attom_property_details(property_id: str):
+    """
+    **Get Property Details from ATTOM API**
+    
+    Retrieves detailed property information from ATTOM API by property identifier.
+    
+    **Parameters:**
+    - **property_id** (str): ATTOM property identifier
+    
+    **Returns:**
+    - Detailed property data including assessments, ownership, and valuations
+    """
+    try:
+        from app.services.attom_service import attom_service
+        
+        result = attom_service.get_property_details(property_id)
+        return result
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to fetch property details: {str(e)}"
+        }
+
+@app.get("/api/properties/attom/market-trends/", tags=["Properties"])
+async def get_attom_market_trends(city: str, state: str):
+    """
+    **Get Market Trends from ATTOM API**
+    
+    Retrieves market trend data for a specific location from ATTOM API.
+    
+    **Query Parameters:**
+    - **city** (str): City name
+    - **state** (str): State code (e.g., "FL", "CA")
+    
+    **Returns:**
+    - Market trend data including price trends, inventory levels, and forecasts
+    """
+    try:
+        from app.services.attom_service import attom_service
+        
+        result = attom_service.get_market_trends(city, state)
+        return result
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to fetch market trends: {str(e)}"
+        }
+
 # ==================== CAMPAIGN ENDPOINTS (Frontend Compatible) ====================
 
 @app.get("/campaigns/", 
@@ -2562,9 +2703,21 @@ async def create_lead(lead_data: LeadCreate):
             "message": "Lead created successfully",
             "data": {
                 "id": lead.id,
-                "first_name": lead.first_name,
-                "last_name": lead.last_name,
+                "first_name": lead_data.first_name,
+                "last_name": lead_data.last_name,
                 "email": lead.email,
+                "phone": lead.phone,
+                "property_address": lead.address,
+                "property_city": lead.city,
+                "property_state": lead.state,
+                "property_zip": lead.zipcode,
+                "property_type": lead_data.property_type,
+                "source": lead.source,
+                "estimated_value": lead_data.estimated_value,
+                "mortgage_balance": lead_data.mortgage_balance,
+                "asking_price": lead_data.asking_price,
+                "preferred_contact_method": lead_data.preferred_contact_method,
+                "lead_type": lead_data.lead_type,
                 "status": lead.status,
                 "created_at": lead.created_at.isoformat(),
                 "updated_at": lead.updated_at.isoformat()
@@ -2583,26 +2736,35 @@ async def get_lead(lead_id: int):
         from deelflow.models import Lead
         
         lead = await sync_to_async(Lead.objects.get)(id=lead_id)
+        
+        # Split name into first_name and last_name
+        name_parts = lead.name.split(" ", 1) if lead.name else ["", ""]
+        first_name = name_parts[0] if len(name_parts) > 0 else ""
+        last_name = name_parts[1] if len(name_parts) > 1 else ""
+        
         return {
         "status": "success",
             "data": {
                 "id": lead.id,
-                "first_name": lead.first_name,
-                "last_name": lead.last_name,
+                "first_name": first_name,
+                "last_name": last_name,
                 "email": lead.email,
                 "phone": lead.phone,
-                "property_address": lead.property_address,
-                "property_city": lead.property_city,
-                "property_state": lead.property_state,
-                "property_zip": lead.property_zip,
-                "property_type": lead.property_type,
+                "property_address": lead.address,
+                "property_city": lead.city,
+                "property_state": lead.state,
+                "property_zip": lead.zipcode,
+                "property_type": "",  # Not stored in model
                 "source": lead.source,
-                "estimated_value": float(lead.estimated_value) if lead.estimated_value else None,
-                "mortgage_balance": float(lead.mortgage_balance) if lead.mortgage_balance else None,
-                "asking_price": float(lead.asking_price) if lead.asking_price else None,
-                "preferred_contact_method": lead.preferred_contact_method,
-                "lead_type": lead.lead_type,
+                "estimated_value": "",
+                "mortgage_balance": "",
+                "asking_price": "",
+                "preferred_contact_method": "",
+                "lead_type": "",
                 "status": lead.status,
+                "motivation_score": lead.motivation_score,
+                "notes": lead.notes,
+                "responded": lead.responded,
                 "created_at": lead.created_at.isoformat(),
                 "updated_at": lead.updated_at.isoformat()
             }
@@ -2625,20 +2787,56 @@ async def update_lead(lead_id: int, lead_data: LeadUpdate):
         from deelflow.models import Lead
         
         lead = await sync_to_async(Lead.objects.get)(id=lead_id)
+        update_data = lead_data.dict(exclude_unset=True)
         
-        # Update lead fields
-        for field, value in lead_data.dict(exclude_unset=True).items():
-            if hasattr(lead, field):
-                setattr(lead, field, value)
+        # Handle name field separately (combine first_name and last_name)
+        if 'first_name' in update_data or 'last_name' in update_data:
+            first_name = update_data.get('first_name', lead.name.split(' ')[0] if lead.name else '')
+            last_name = update_data.get('last_name', lead.name.split(' ')[1] if len(lead.name.split(' ')) > 1 else '')
+            lead.name = f"{first_name} {last_name}".strip()
+        
+        # Handle property address fields
+        if 'property_address' in update_data:
+            lead.address = update_data['property_address']
+        if 'property_city' in update_data:
+            lead.city = update_data['property_city']
+        if 'property_state' in update_data:
+            lead.state = update_data['property_state']
+        if 'property_zip' in update_data:
+            lead.zipcode = update_data['property_zip']
+        
+        # Handle other fields
+        field_mapping = {
+            'email': 'email',
+            'phone': 'phone',
+            'source': 'source',
+            'status': 'status'
+        }
+        
+        for frontend_field, backend_field in field_mapping.items():
+            if frontend_field in update_data:
+                setattr(lead, backend_field, update_data[frontend_field])
         
         await sync_to_async(lead.save)()
+        
+        # Return updated data
+        name_parts = lead.name.split(" ", 1) if lead.name else ["", ""]
+        first_name = name_parts[0] if len(name_parts) > 0 else ""
+        last_name = name_parts[1] if len(name_parts) > 1 else ""
+        
         return {
         "status": "success",
             "message": "Lead updated successfully",
         "data": {
                 "id": lead.id,
-                "first_name": lead.first_name,
-                "last_name": lead.last_name,
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": lead.email,
+                "phone": lead.phone,
+                "property_address": lead.address,
+                "property_city": lead.city,
+                "property_state": lead.state,
+                "property_zip": lead.zipcode,
                 "status": lead.status,
                 "updated_at": lead.updated_at.isoformat()
             }
@@ -3278,6 +3476,485 @@ async def delete_role(role_id: int):
             "message": f"Failed to delete role: {str(e)}"
         }
 
+# ==================== USER-ROLE ASSIGNMENT ENDPOINTS ====================
+
+@app.post("/api/roles/{role_id}/assign-user/", 
+         tags=["Role Management"],
+         summary="Assign User to Role",
+         description="Assign a user to a specific role by providing either user_id or email",
+         response_description="User-role assignment status with user and role details",
+         responses={
+             200: {
+                 "description": "Successfully assigned user to role",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "success",
+                             "message": "User assigned to role successfully",
+                             "data": {
+                                 "user": {
+                                     "id": 1,
+                                     "email": "user@example.com",
+                                     "first_name": "John",
+                                     "last_name": "Doe"
+                                 },
+                                 "role": {
+                                     "id": 141,
+                                     "name": "admin",
+                                     "label": "Administrator"
+                                 }
+                             }
+                         }
+                     }
+                 }
+             },
+             400: {
+                 "description": "Bad request - missing user_id or email",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Either user_id or email must be provided"
+                         }
+                     }
+                 }
+             },
+             404: {
+                 "description": "Not found - role or user not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Role not found"
+                         }
+                     }
+                 }
+             }
+         })
+async def assign_user_to_role(role_id: int, user_data: dict):
+    """
+    **Assign User to Role**
+    
+    Assigns a user to a specific role. You can provide either `user_id` or `email` to identify the user.
+    
+    **Path Parameters:**
+    - **role_id** (int): The ID of the role to assign
+    
+    **Request Body:**
+    - **user_id** (int, optional): The ID of the user to assign
+    - **email** (str, optional): The email of the user to assign
+    
+    **Returns:**
+    - **status**: "success" or "error"
+    - **message**: Status message
+    - **data** (if success):
+      - **user**: User details (id, email, first_name, last_name)
+      - **role**: Role details (id, name, label)
+    
+    **Example Request:**
+    ```json
+    {
+        "user_id": 1
+    }
+    ```
+    OR
+    ```json
+    {
+        "email": "user@example.com"
+    }
+    ```
+    """
+    try:
+        from deelflow.models import Role, Organization
+        
+        # Get user_id or email from request
+        user_id = user_data.get("user_id")
+        email = user_data.get("email")
+        
+        if not user_id and not email:
+            return {
+                "status": "error",
+                "message": "Either user_id or email must be provided"
+            }
+        
+        # Get role
+        role = await sync_to_async(Role.objects.get)(id=role_id)
+        
+        # Find user by ID or email
+        from deelflow.models import User
+        if user_id:
+            user = await sync_to_async(User.objects.get)(id=user_id)
+        else:
+            user = await sync_to_async(User.objects.get)(email=email)
+        
+        # Assign role to user (store role name as string)
+        user.role = role.name
+        await sync_to_async(user.save)()
+        
+        return {
+            "status": "success",
+            "message": "User assigned to role successfully",
+            "data": {
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "first_name": getattr(user, 'first_name', ''),
+                    "last_name": getattr(user, 'last_name', '')
+                },
+                "role": {
+                    "id": role.id,
+                    "name": role.name,
+                    "label": role.label
+                }
+            }
+        }
+    except Role.DoesNotExist:
+        return {
+            "status": "error",
+            "message": "Role not found"
+        }
+    except User.DoesNotExist:
+        return {
+            "status": "error",
+            "message": "User not found. Please provide a valid user_id or email."
+        }
+    except Exception as e:
+        # Only print traceback for unexpected errors
+        if "DoesNotExist" not in str(e):
+            import traceback
+            traceback.print_exc()
+        return {
+            "status": "error",
+            "message": f"Failed to assign user to role: {str(e)}"
+        }
+
+@app.delete("/api/roles/{role_id}/users/{user_id}/", 
+            tags=["Role Management"],
+            summary="Remove User from Role",
+            description="Remove a user's assignment from a specific role",
+            response_description="User removal status",
+            responses={
+                200: {
+                    "description": "Successfully removed user from role",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "status": "success",
+                                "message": "User removed from role successfully",
+                                "data": {
+                                    "user": {"id": 1, "email": "user@example.com"},
+                                    "role": {"id": 141, "name": "admin"}
+                                }
+                            }
+                        }
+                    }
+                },
+                404: {
+                    "description": "Role or user not found",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "status": "error",
+                                "message": "Role or user not found"
+                            }
+                        }
+                    }
+                }
+            })
+async def remove_user_from_role(role_id: int, user_id: int):
+    """
+    **Remove User from Role**
+    
+    Removes a user's assignment from a specific role. The user's role will be set to the default "user" role.
+    
+    **Path Parameters:**
+    - **role_id** (int): The ID of the role to remove the user from
+    - **user_id** (int): The ID of the user to remove
+    
+    **Returns:**
+    - **status**: "success" or "error"
+    - **message**: Status message
+    - **data** (if success):
+      - **user**: User details (id, email)
+      - **role**: Role details (id, name)
+    """
+    try:
+        from deelflow.models import Role, User
+        
+        # Get user and role
+        user = await sync_to_async(User.objects.get)(id=user_id)
+        role = await sync_to_async(Role.objects.get)(id=role_id)
+        
+        # Check if user is assigned to this role
+        if user.role != role.name:
+            return {
+                "status": "error",
+                "message": "User is not assigned to this role"
+            }
+        
+        # Remove role assignment (set role to empty string or default)
+        user.role = "user"  # Default role
+        await sync_to_async(user.save)()
+        
+        return {
+            "status": "success",
+            "message": "User removed from role successfully",
+            "data": {
+                "user": {
+                    "id": user.id,
+                    "email": user.email
+                },
+                "role": {
+                    "id": role.id,
+                    "name": role.name
+                }
+            }
+        }
+    except (Role.DoesNotExist, User.DoesNotExist) as e:
+        return {
+            "status": "error",
+            "message": f"Role or user not found: {str(e)}"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to remove user from role: {str(e)}"
+        }
+
+@app.get("/api/roles/{role_id}/users/", 
+         tags=["Role Management"],
+         summary="Get Users in Role",
+         description="Retrieve all users assigned to a specific role",
+         response_description="List of users with their role information",
+         responses={
+             200: {
+                 "description": "Successfully retrieved users",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "success",
+                             "data": {
+                                 "role": {
+                                     "id": 141,
+                                     "name": "admin",
+                                     "label": "Administrator"
+                                 },
+                                 "users": [
+                                     {
+                                         "id": 1,
+                                         "email": "user@example.com",
+                                         "first_name": "John",
+                                         "last_name": "Doe",
+                                         "role": {"id": 141, "name": "admin", "label": "Administrator"}
+                                     }
+                                 ],
+                                 "total": 1
+                             }
+                         }
+                     }
+                 }
+             },
+             404: {
+                 "description": "Role not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Role not found"
+                         }
+                     }
+                 }
+             }
+         })
+async def get_role_users(role_id: int):
+    """
+    **Get Users Assigned to Role**
+    
+    Retrieves all users assigned to a specific role with their full details.
+    
+    **Path Parameters:**
+    - **role_id** (int): The ID of the role
+    
+    **Returns:**
+    - **status**: "success" or "error"
+    - **data** (if success):
+      - **role**: Role details (id, name, label)
+      - **users**: Array of user objects with (id, email, first_name, last_name, role)
+      - **total**: Total number of users in the role
+    """
+    try:
+        from deelflow.models import Role, User
+        
+        # Get role
+        role = await sync_to_async(Role.objects.get)(id=role_id)
+        
+        # Get all users with this role (role is a string field)
+        users = await sync_to_async(list)(User.objects.filter(role=role.name))
+        
+        users_data = []
+        for user in users:
+            users_data.append({
+                "id": user.id,
+                "email": user.email,
+                "first_name": getattr(user, 'first_name', ''),
+                "last_name": getattr(user, 'last_name', ''),
+                "role": {
+                    "id": role.id,
+                    "name": role.name,
+                    "label": role.label
+                }
+            })
+        
+        return {
+            "status": "success",
+            "data": {
+                "role": {
+                    "id": role.id,
+                    "name": role.name,
+                    "label": role.label
+                },
+                "users": users_data,
+                "total": len(users_data)
+            }
+        }
+    except Role.DoesNotExist:
+        return {
+            "status": "error",
+            "message": "Role not found"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to get role users: {str(e)}"
+        }
+
+@app.put("/api/users/{user_id}/assign-role/", 
+         tags=["Role Management"],
+         summary="Assign Role to User (Alternative)",
+         description="Alternative endpoint to assign a role to a user by user ID",
+         response_description="Role assignment status",
+         responses={
+             200: {
+                 "description": "Successfully assigned role to user",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "success",
+                             "message": "Role assigned to user successfully",
+                             "data": {
+                                 "user": {
+                                     "id": 1,
+                                     "email": "user@example.com",
+                                     "first_name": "John",
+                                     "last_name": "Doe"
+                                 },
+                                 "role": {
+                                     "id": 141,
+                                     "name": "admin",
+                                     "label": "Administrator"
+                                 }
+                             }
+                         }
+                     }
+                 }
+             },
+             400: {
+                 "description": "Bad request - missing role_id",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "role_id is required"
+                         }
+                     }
+                 }
+             },
+             404: {
+                 "description": "User or role not found",
+                 "content": {
+                     "application/json": {
+                         "example": {
+                             "status": "error",
+                             "message": "Role or user not found"
+                         }
+                     }
+                 }
+             }
+         })
+async def assign_role_to_user(user_id: int, role_data: dict):
+    """
+    **Assign Role to User (Alternative Endpoint)**
+    
+    Alternative endpoint to assign a role to a user. This endpoint takes the user ID as a path parameter.
+    
+    **Path Parameters:**
+    - **user_id** (int): The ID of the user to assign the role to
+    
+    **Request Body:**
+    - **role_id** (int): The ID of the role to assign
+    
+    **Returns:**
+    - **status**: "success" or "error"
+    - **message**: Status message
+    - **data** (if success):
+      - **user**: User details (id, email, first_name, last_name)
+      - **role**: Role details (id, name, label)
+    
+    **Example Request:**
+    ```json
+    {
+        "role_id": 141
+    }
+    ```
+    """
+    try:
+        from deelflow.models import Role, User
+        
+        # Get role_id from request
+        role_id = role_data.get("role_id")
+        
+        if not role_id:
+            return {
+                "status": "error",
+                "message": "role_id is required"
+            }
+        
+        # Get user and role
+        user = await sync_to_async(User.objects.get)(id=user_id)
+        role = await sync_to_async(Role.objects.get)(id=role_id)
+        
+        # Assign role (store role name as string)
+        user.role = role.name
+        await sync_to_async(user.save)()
+        
+        return {
+            "status": "success",
+            "message": "Role assigned to user successfully",
+            "data": {
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "first_name": getattr(user, 'first_name', ''),
+                    "last_name": getattr(user, 'last_name', '')
+                },
+                "role": {
+                    "id": role.id,
+                    "name": role.name,
+                    "label": role.label
+                }
+            }
+        }
+    except (Role.DoesNotExist, User.DoesNotExist) as e:
+        return {
+            "status": "error",
+            "message": f"Role or user not found: {str(e)}"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to assign role: {str(e)}"
+        }
+
 # Add legacy endpoints for frontend compatibility
 @app.get("/get_roles/", tags=["Role Management"])
 async def get_roles_legacy():
@@ -3741,6 +4418,149 @@ async def create_payment_intent(request_data: PaymentIntentCreate):
         return {
             "status": "error",
             "message": f"Failed to create payment intent: {str(e)}"
+        }
+
+# ==================== SIGNNOW API INTEGRATION ENDPOINTS ====================
+
+@app.get("/api/signnow/test/", tags=["SignNow"])
+async def test_signnow_connection():
+    """
+    **Test SignNow API Connection**
+    
+    Tests the connection to SignNow API and verifies authentication.
+    
+    **Returns:**
+    - Connection status
+    - Authentication status
+    - User information
+    """
+    try:
+        from app.services.signnow_service import signnow_service
+        
+        result = signnow_service.test_connection()
+        return result
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to test SignNow connection: {str(e)}"
+        }
+
+@app.get("/api/signnow/user/", tags=["SignNow"])
+async def get_signnow_user():
+    """
+    **Get SignNow User Information**
+    
+    Retrieves authenticated user information from SignNow.
+    
+    **Returns:**
+    - User email
+    - User ID
+    - Account information
+    """
+    try:
+        from app.services.signnow_service import signnow_service
+        
+        result = signnow_service.get_user_info()
+        return result
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to get user info: {str(e)}"
+        }
+
+@app.get("/api/signnow/documents/", tags=["SignNow"])
+async def get_signnow_documents(limit: int = 100):
+    """
+    **Get SignNow Documents**
+    
+    Retrieves list of documents from SignNow account.
+    
+    **Query Parameters:**
+    - limit: Maximum number of documents (default: 100)
+    
+    **Returns:**
+    - List of documents
+    """
+    try:
+        from app.services.signnow_service import signnow_service
+        
+        result = signnow_service.get_documents(limit=limit)
+        return result
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to get documents: {str(e)}"
+        }
+
+@app.post("/api/signnow/documents/", tags=["SignNow"])
+async def create_signnow_document(
+    document_name: str,
+    file_path: Optional[str] = None
+):
+    """
+    **Create SignNow Document**
+    
+    Creates a new document in SignNow.
+    
+    **Request Parameters:**
+    - document_name: Name of the document
+    - file_path: Path to document file (optional)
+    
+    **Returns:**
+    - Document ID
+    - Document information
+    """
+    try:
+        from app.services.signnow_service import signnow_service
+        
+        result = signnow_service.create_document(
+            document_name=document_name,
+            file_path=file_path
+        )
+        return result
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to create document: {str(e)}"
+        }
+
+@app.post("/api/signnow/documents/{document_id}/send/", tags=["SignNow"])
+async def send_signnow_document(
+    document_id: str,
+    signer_email: str
+):
+    """
+    **Send Document for Signature**
+    
+    Sends a SignNow document to a signer for signature.
+    
+    **Path Parameters:**
+    - document_id: SignNow document ID
+    
+    **Request Body:**
+    - signer_email: Email address of the signer
+    
+    **Returns:**
+    - Sending status
+    - Invitation ID
+    """
+    try:
+        from app.services.signnow_service import signnow_service
+        
+        result = signnow_service.send_document_for_signature(
+            document_id=document_id,
+            signer_email=signer_email
+        )
+        return result
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to send document: {str(e)}"
         }
 
 if __name__ == "__main__":
