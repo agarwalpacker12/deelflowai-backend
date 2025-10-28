@@ -11,8 +11,7 @@ from datetime import datetime, timedelta
 import logging
 
 # Configure Stripe
-
-os.getenv('STRIPE_SECRET_KEY', '')
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY', '')
 
 
 logger = logging.getLogger(__name__)
