@@ -9,6 +9,13 @@ from typing import Dict, List, Optional, Any
 from decimal import Decimal
 from datetime import datetime, timedelta
 import logging
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load environment variables
+env_path = Path(__file__).parent.parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
 
 # Configure Stripe
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY', '')
@@ -22,6 +29,12 @@ class PaymentService:
     def __init__(self):
         self.stripe = stripe
         self.webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET', 'whsec_your_webhook_secret_here')
+        
+        # Set Stripe API key dynamically from environment
+        api_key = os.getenv('STRIPE_SECRET_KEY', '')
+        if api_key:
+            stripe.api_key = api_key
+            print(f"🔑 PaymentService: Stripe API key configured: {api_key[:20]}...")
     
     async def create_payment_intent(self, amount: Decimal, currency: str = "usd", 
                                   metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:

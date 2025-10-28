@@ -19,6 +19,12 @@ from asgiref.sync import sync_to_async
 from django.utils import timezone
 import ast
 
+# Load environment variables BEFORE Django setup
+from dotenv import load_dotenv
+env_path = Path(__file__).parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+
 # Import authentication dependencies
 from app.core.auth_middleware import get_current_user
 
