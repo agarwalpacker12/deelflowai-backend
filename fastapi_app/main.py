@@ -4,6 +4,8 @@ Completely organized with proper Swagger grouping and frontend compatibility
 """
 
 from fastapi import FastAPI, HTTPException, Request, Query, Depends, Header, status, UploadFile, File, Body, Request as FastAPIRequest
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from starlette.requests import Request
 from fastapi.params import Path as PathParam
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -4296,19 +4298,30 @@ async def create_permission(permission_data: dict):
 
 # ==================== PAYMENT GATEWAY ENDPOINTS ====================
 
+# Create security scheme for Swagger UI (HTTPBearer handles "Bearer" prefix automatically)
+bearer_scheme = HTTPBearer(auto_error=False)
+
 @app.get("/subscription-packs/", tags=["Payments"])
 async def get_subscription_packages(
-    authorization: Optional[str] = Header(None, alias="Authorization")
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ):
     """
     **Get Subscription Packages**
     
     Retrieves all available subscription packages from Stripe.
     
-    **Authentication Required**
+    **Authentication Required** 🔐
     - User must be signed in to see available plans
     - Include JWT token in Authorization HEADER: `Authorization: Bearer <token>`
     - ⚠️ DO NOT send token in request body - use Authorization header only
+    
+    **Using Swagger UI:**
+    1. Click the **"Authorize"** button (🔒 lock icon, top right)
+    2. Enter your JWT token: `Bearer <your_token>` (or just `<your_token>` - Bearer is added automatically)
+    3. Click **"Authorize"**
+    4. Click **"Close"**
+    5. Try the endpoint - your token will be automatically included in requests
     
     **Returns:**
     - List of subscription packages with pricing and features
@@ -4321,6 +4334,14 @@ async def get_subscription_packages(
       Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     ```
     """
+    # Get authorization header - prefer from HTTPBearer, fallback to request headers
+    authorization = None
+    if credentials and credentials.credentials:
+        authorization = f"Bearer {credentials.credentials}"
+    else:
+        # Fallback: get from request headers directly
+        authorization = request.headers.get("Authorization") or request.headers.get("authorization")
+    
     # Manual authentication check (enforce authentication)
     from app.core.auth_middleware import get_current_user as auth_user
     try:

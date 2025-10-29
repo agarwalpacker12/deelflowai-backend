@@ -37,14 +37,9 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
     Raises:
         HTTPException: If authentication fails
     """
-    # Debug logging
-    logger.error(f"🔐 get_current_user called with authorization: {authorization}")
-    print(f"🔐 DEBUG: get_current_user called with authorization: '{authorization}'")
-    
     # Explicitly check for None or empty string - this MUST raise an exception
     if authorization is None or authorization == "":
         logger.warning("Authentication required but no Authorization header provided")
-        print("❌ DEBUG: Raising AuthenticationRequired exception")
         raise AuthenticationRequired()
     
     # Extract token from Bearer format
