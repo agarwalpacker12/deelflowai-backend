@@ -24,7 +24,7 @@ class AuthenticationRequired(HTTPException):
         )
 
 
-def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
+async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
     """
     Dependency function to get current authenticated user
     
@@ -37,25 +37,37 @@ def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
     Raises:
         HTTPException: If authentication fails
     """
-    if not authorization:
+    # Debug logging
+    logger.error(f"🔐 get_current_user called with authorization: {authorization}")
+    print(f"🔐 DEBUG: get_current_user called with authorization: '{authorization}'")
+    
+    # Explicitly check for None or empty string - this MUST raise an exception
+    if authorization is None or authorization == "":
+        logger.warning("Authentication required but no Authorization header provided")
+        print("❌ DEBUG: Raising AuthenticationRequired exception")
         raise AuthenticationRequired()
     
+    # Extract token from Bearer format
     token = extract_token_from_header(authorization)
     if not token:
+        logger.warning(f"Invalid authorization header format: {authorization[:50] if authorization else 'None'}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication header format. Expected: Bearer <token>",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    # Verify token is valid
     payload = verify_token(token)
     if not payload:
+        logger.warning("Token verification failed - invalid or expired token")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    logger.debug(f"User authenticated successfully: {payload.get('user_id', 'Unknown')}")
     return payload
 
 

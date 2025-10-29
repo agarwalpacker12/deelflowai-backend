@@ -3,13 +3,13 @@ DeelFlowAI FastAPI Application - Final Clean Version
 Completely organized with proper Swagger grouping and frontend compatibility
 """
 
-from fastapi import FastAPI, HTTPException, Request, Query, Depends, Header, status
+from fastapi import FastAPI, HTTPException, Request, Query, Depends, Header, status, UploadFile, File, Body, Request as FastAPIRequest
 from fastapi.params import Path as PathParam
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict, Any
 import os
 import sys
 import django
@@ -4297,9 +4297,8 @@ async def create_permission(permission_data: dict):
 # ==================== PAYMENT GATEWAY ENDPOINTS ====================
 
 @app.get("/subscription-packs/", tags=["Payments"])
-@app.post("/subscription-packs/", tags=["Payments"])
 async def get_subscription_packages(
-    current_user: dict = Depends(get_current_user)
+    authorization: Optional[str] = Header(None, alias="Authorization")
 ):
     """
     **Get Subscription Packages**
@@ -4310,8 +4309,6 @@ async def get_subscription_packages(
     - User must be signed in to see available plans
     - Include JWT token in Authorization HEADER: `Authorization: Bearer <token>`
     - ⚠️ DO NOT send token in request body - use Authorization header only
-    
-    **Note:** This endpoint accepts both GET and POST methods
     
     **Returns:**
     - List of subscription packages with pricing and features
@@ -4324,11 +4321,20 @@ async def get_subscription_packages(
       Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     ```
     """
+    # Manual authentication check (enforce authentication)
+    from app.core.auth_middleware import get_current_user as auth_user
+    try:
+        current_user = await auth_user(authorization)
+    except HTTPException as auth_error:
+        raise auth_error  # Re-raise authentication errors
+    
     try:
         from app.services.payment_service import PaymentService
         payment_service = PaymentService()
         result = await payment_service.get_subscription_packages()
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         return {
             "status": "error",
@@ -4787,21 +4793,173 @@ async def create_signnow_document(
             "message": f"Failed to create document: {str(e)}"
         }
 
+@app.post("/api/signnow/upload/", tags=["SignNow"])
+async def upload_signnow_document(
+    file: UploadFile = File(...),
+    document_name: Optional[str] = None
+):
+    """
+    **Upload Document to SignNow**
+    
+    Uploads a document file to SignNow for signing.
+    
+    **Request Body:**
+    - file: Document file (PDF, DOCX, etc.)
+    - document_name: Optional custom name for the document
+    
+    **Returns:**
+    - Document ID
+    - Document information
+    """
+    try:
+        from app.services.signnow_service import signnow_service
+        import tempfile
+        import os
+        
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp_file:
+            content = await file.read()
+            tmp_file.write(content)
+            tmp_path = tmp_file.name
+        
+        try:
+            # Upload to SignNow
+            result = signnow_service.upload_document(
+                file_path=tmp_path,
+                document_name=document_name or file.filename
+            )
+            return result
+        finally:
+            # Clean up temp file
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to upload document: {str(e)}"
+        }
+
+@app.post("/api/signnow/invite/", tags=["SignNow"])
+async def invite_signnow_signers(
+    document_id: str = Body(...),
+    signers: List[Dict[str, Any]] = Body(...),
+    subject: Optional[str] = Body(None),
+    message: Optional[str] = Body(None)
+):
+    """
+    **Invite Signers to Document**
+    
+    Sends signature invitations to one or more signers.
+    
+    **Request Body:**
+    - document_id: SignNow document ID
+    - signers: List of signer objects with email, order (optional), role (optional)
+    - subject: Email subject (optional)
+    - message: Email message (optional)
+    
+    **Returns:**
+    - Invitation status
+    - Invitation IDs
+    """
+    try:
+        from app.services.signnow_service import signnow_service
+        
+        result = signnow_service.invite_signers(
+            document_id=document_id,
+            signers=signers,
+            subject=subject,
+            message=message
+        )
+        return result
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to send invitation: {str(e)}"
+        }
+
+@app.get("/api/signnow/status/{document_id}", tags=["SignNow"])
+async def get_signnow_document_status(document_id: str):
+    """
+    **Get Document Status**
+    
+    Retrieves the current status and information about a document.
+    
+    **Path Parameters:**
+    - document_id: SignNow document ID
+    
+    **Returns:**
+    - Document status
+    - Signing progress
+    - Signer information
+    """
+    try:
+        from app.services.signnow_service import signnow_service
+        
+        result = signnow_service.get_document_status(document_id=document_id)
+        return result
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to get document status: {str(e)}"
+        }
+
+@app.get("/api/signnow/download/{document_id}", tags=["SignNow"])
+async def download_signnow_document(
+    document_id: str,
+    save_path: Optional[str] = None
+):
+    """
+    **Download Document**
+    
+    Downloads a completed or in-progress document from SignNow.
+    
+    **Path Parameters:**
+    - document_id: SignNow document ID
+    
+    **Query Parameters:**
+    - save_path: Optional path to save the downloaded file
+    
+    **Returns:**
+    - Document file content or save confirmation
+    """
+    try:
+        from app.services.signnow_service import signnow_service
+        
+        result = signnow_service.download_document(
+            document_id=document_id,
+            file_path=save_path
+        )
+        return result
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to download document: {str(e)}"
+        }
+
 @app.post("/api/signnow/documents/{document_id}/send/", tags=["SignNow"])
 async def send_signnow_document(
     document_id: str,
-    signer_email: str
+    signer_email: str,
+    subject: Optional[str] = None,
+    message: Optional[str] = None
 ):
     """
-    **Send Document for Signature**
+    **Send Document for Signature (Legacy)**
     
     Sends a SignNow document to a signer for signature.
+    For multiple signers, use /api/signnow/invite/ instead.
     
     **Path Parameters:**
     - document_id: SignNow document ID
     
     **Request Body:**
     - signer_email: Email address of the signer
+    - subject: Email subject (optional)
+    - message: Email message (optional)
     
     **Returns:**
     - Sending status
@@ -4812,7 +4970,9 @@ async def send_signnow_document(
         
         result = signnow_service.send_document_for_signature(
             document_id=document_id,
-            signer_email=signer_email
+            signer_email=signer_email,
+            subject=subject,
+            message=message
         )
         return result
         

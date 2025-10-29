@@ -143,16 +143,16 @@ class SignNowService:
                 "message": str(e)
             }
     
-    def create_document(self, document_name: str, file_path: Optional[str] = None) -> Dict[str, Any]:
+    def upload_document(self, file_path: str, document_name: Optional[str] = None) -> Dict[str, Any]:
         """
-        Create a new document in SignNow
+        Upload a document to SignNow
         
         Args:
-            document_name: Name of the document
-            file_path: Path to document file (optional)
+            file_path: Path to the document file to upload
+            document_name: Optional custom name for the document
             
         Returns:
-            Dictionary with document creation result
+            Dictionary with document upload result including document ID
         """
         try:
             # Authenticate if needed
@@ -163,8 +163,85 @@ class SignNowService:
                         "message": "Authentication required"
                     }
             
-            # SignNow document creation endpoint
-            url = f"{self.base_url}/api/document"
+            # Check if file exists
+            if not os.path.exists(file_path):
+                return {
+                    "status": "error",
+                    "message": f"File not found: {file_path}"
+                }
+            
+            # Use document_name or extract from file path
+            if not document_name:
+                document_name = os.path.basename(file_path)
+            
+            # SignNow document upload endpoint - requires multipart form data
+            url = f"{self.base_url}/api/v1/document"
+            
+            # Prepare multipart form data
+            with open(file_path, 'rb') as f:
+                files = {
+                    'file': (document_name, f, 'application/pdf')  # Adjust content type as needed
+                }
+                
+                # Remove Content-Type from headers for multipart upload (requests sets it automatically)
+                upload_headers = {
+                    "Authorization": self.headers.get("Authorization")
+                }
+                
+                logger.info(f"Uploading document to SignNow: {document_name}")
+                response = requests.post(url, headers=upload_headers, files=files, timeout=60)
+            
+            if response.status_code in [200, 201]:
+                data = response.json()
+                logger.info(f"Document uploaded successfully: {data.get('id', 'Unknown ID')}")
+                return {
+                    "status": "success",
+                    "data": data
+                }
+            else:
+                logger.error(f"Failed to upload document: {response.status_code}")
+                logger.error(f"Response: {response.text}")
+                return {
+                    "status": "error",
+                    "message": f"HTTP {response.status_code}: Failed to upload document",
+                    "data": response.text
+                }
+                
+        except Exception as e:
+            logger.error(f"Error uploading document: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+    
+    def create_document(self, document_name: str, file_path: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Create a new document in SignNow (legacy method - use upload_document for file uploads)
+        
+        Args:
+            document_name: Name of the document
+            file_path: Path to document file (optional)
+            
+        Returns:
+            Dictionary with document creation result
+        """
+        # If file_path is provided, use upload_document instead
+        if file_path:
+            return self.upload_document(file_path, document_name)
+        
+        try:
+            # Authenticate if needed
+            if not self.access_token:
+                if not self.authenticate():
+                    return {
+                        "status": "error",
+                        "message": "Authentication required"
+                    }
+            
+            # SignNow document creation endpoint (for empty documents)
+            url = f"{self.base_url}/api/v1/document"
             
             payload = {
                 "name": document_name,
@@ -212,7 +289,7 @@ class SignNowService:
                         "message": "Authentication required"
                     }
             
-            url = f"{self.base_url}/api/document"
+            url = f"{self.base_url}/api/v1/document"
             params = {"limit": limit}
             
             response = requests.get(url, headers=self.headers, params=params, timeout=30)
@@ -238,16 +315,19 @@ class SignNowService:
                 "message": str(e)
             }
     
-    def send_document_for_signature(self, document_id: str, signer_email: str) -> Dict[str, Any]:
+    def invite_signers(self, document_id: str, signers: List[Dict[str, Any]], 
+                       subject: Optional[str] = None, message: Optional[str] = None) -> Dict[str, Any]:
         """
-        Send document for signature
+        Send document invitation to signers
         
         Args:
             document_id: SignNow document ID
-            signer_email: Email address of the signer
+            signers: List of signer dictionaries with keys: email, order (optional)
+            subject: Email subject (optional)
+            message: Email message (optional)
             
         Returns:
-            Dictionary with sending result
+            Dictionary with invitation result
         """
         try:
             if not self.access_token:
@@ -257,32 +337,185 @@ class SignNowService:
                         "message": "Authentication required"
                     }
             
-            url = f"{self.base_url}/api/document/{document_id}/send"
+            # SignNow invite endpoint
+            url = f"{self.base_url}/api/v1/document/{document_id}/invite"
+            
+            # Format signers correctly
+            formatted_signers = []
+            for idx, signer in enumerate(signers):
+                formatted_signer = {
+                    "email": signer.get("email"),
+                    "order": signer.get("order", idx + 1),
+                    "role_id": signer.get("role_id", "Signer"),  # Default role
+                    "role": signer.get("role", "Signer")
+                }
+                formatted_signers.append(formatted_signer)
             
             payload = {
-                "email": signer_email,
-                "subject": "Please sign this document",
-                "message": "Please review and sign the document."
+                "to": formatted_signers,
+                "subject": subject or "Please sign this document",
+                "message": message or "Please review and sign the attached document."
             }
             
+            logger.info(f"Sending invitation for document {document_id} to {len(formatted_signers)} signer(s)")
             response = requests.post(url, headers=self.headers, json=payload, timeout=30)
             
             if response.status_code in [200, 201]:
+                data = response.json()
+                logger.info(f"Invitation sent successfully")
+                return {
+                    "status": "success",
+                    "data": data
+                }
+            else:
+                logger.error(f"Failed to send invitation: {response.status_code}")
+                logger.error(f"Response: {response.text}")
+                return {
+                    "status": "error",
+                    "message": f"HTTP {response.status_code}: Failed to send invitation",
+                    "data": response.text
+                }
+                
+        except Exception as e:
+            logger.error(f"Error sending invitation: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+    
+    def send_document_for_signature(self, document_id: str, signer_email: str, 
+                                   subject: Optional[str] = None, message: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Send document for signature (legacy method - use invite_signers for multiple signers)
+        
+        Args:
+            document_id: SignNow document ID
+            signer_email: Email address of the signer
+            subject: Email subject (optional)
+            message: Email message (optional)
+            
+        Returns:
+            Dictionary with sending result
+        """
+        # Use the new invite_signers method
+        return self.invite_signers(
+            document_id=document_id,
+            signers=[{"email": signer_email}],
+            subject=subject,
+            message=message
+        )
+    
+    def get_document_status(self, document_id: str) -> Dict[str, Any]:
+        """
+        Get document status and information
+        
+        Args:
+            document_id: SignNow document ID
+            
+        Returns:
+            Dictionary with document status information
+        """
+        try:
+            if not self.access_token:
+                if not self.authenticate():
+                    return {
+                        "status": "error",
+                        "message": "Authentication required"
+                    }
+            
+            # SignNow document status endpoint
+            url = f"{self.base_url}/api/v1/document/{document_id}"
+            
+            logger.info(f"Getting status for document: {document_id}")
+            response = requests.get(url, headers=self.headers, timeout=30)
+            
+            if response.status_code == 200:
                 data = response.json()
                 return {
                     "status": "success",
                     "data": data
                 }
             else:
-                logger.error(f"Failed to send document: {response.status_code}")
+                logger.error(f"Failed to get document status: {response.status_code}")
+                logger.error(f"Response: {response.text}")
                 return {
                     "status": "error",
-                    "message": f"HTTP {response.status_code}",
+                    "message": f"HTTP {response.status_code}: Failed to get document status",
                     "data": response.text
                 }
                 
         except Exception as e:
-            logger.error(f"Error sending document: {str(e)}")
+            logger.error(f"Error getting document status: {str(e)}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+    
+    def download_document(self, document_id: str, file_path: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Download a document from SignNow
+        
+        Args:
+            document_id: SignNow document ID
+            file_path: Optional path to save the downloaded file
+            
+        Returns:
+            Dictionary with download result including file content or saved path
+        """
+        try:
+            if not self.access_token:
+                if not self.authenticate():
+                    return {
+                        "status": "error",
+                        "message": "Authentication required"
+                    }
+            
+            # SignNow document download endpoint
+            url = f"{self.base_url}/api/v1/document/{document_id}/download"
+            
+            logger.info(f"Downloading document: {document_id}")
+            response = requests.get(url, headers=self.headers, timeout=60, stream=True)
+            
+            if response.status_code == 200:
+                # If file_path provided, save to file
+                if file_path:
+                    with open(file_path, 'wb') as f:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            f.write(chunk)
+                    logger.info(f"Document saved to: {file_path}")
+                    return {
+                        "status": "success",
+                        "data": {
+                            "message": "Document downloaded successfully",
+                            "file_path": file_path,
+                            "document_id": document_id
+                        }
+                    }
+                else:
+                    # Return file content
+                    return {
+                        "status": "success",
+                        "data": {
+                            "content": response.content,
+                            "content_type": response.headers.get("Content-Type"),
+                            "document_id": document_id
+                        }
+                    }
+            else:
+                logger.error(f"Failed to download document: {response.status_code}")
+                logger.error(f"Response: {response.text}")
+                return {
+                    "status": "error",
+                    "message": f"HTTP {response.status_code}: Failed to download document",
+                    "data": response.text
+                }
+                
+        except Exception as e:
+            logger.error(f"Error downloading document: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return {
                 "status": "error",
                 "message": str(e)

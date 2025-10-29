@@ -172,15 +172,17 @@ class PaymentService:
             stripe_key = os.getenv("STRIPE_SECRET_KEY", "")
             
             # If key is still placeholder or empty, try reading .env directly
-            if not stripe_key or stripe_key == 'sk_test_your_key_here' or 'test' in stripe_key.lower():
+            if (not stripe_key or stripe_key == 'sk_test_your_key_here' or 'test' in stripe_key.lower()) and env_path:
                 # Read .env file directly
                 try:
-                    with open(env_path, 'r') as f:
-                        for line in f:
-                            if line.startswith('STRIPE_SECRET_KEY='):
-                                stripe_key = line.split('=', 1)[1].strip()
-                                break
-                except:
+                    if env_path.exists():
+                        with open(env_path, 'r') as f:
+                            for line in f:
+                                if line.startswith('STRIPE_SECRET_KEY='):
+                                    stripe_key = line.split('=', 1)[1].strip()
+                                    break
+                except Exception as e:
+                    print(f"⚠️  Error reading .env file in first attempt: {e}")
                     pass
             
             # CRITICAL: Ensure we have a valid Stripe key before making API calls
@@ -223,7 +225,7 @@ class PaymentService:
             else:
                 print(f"❌ CRITICAL: No valid Stripe key found!")
                 print(f"   Checked env_path: {env_path}")
-                print(f"   File exists: {env_path.exists()}")
+                print(f"   File exists: {env_path.exists() if env_path else 'N/A (path is None)'}")
                 print(f"   stripe_key value: {stripe_key[:50] if stripe_key else 'None'}...")
                 print(f"   Current stripe.api_key: {stripe.api_key[:30] if stripe.api_key else 'NOT SET'}...")
                 raise ValueError("Stripe API key not configured. Please set STRIPE_SECRET_KEY in .env file.")
