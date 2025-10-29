@@ -62,7 +62,9 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    logger.debug(f"User authenticated successfully: {payload.get('user_id', 'Unknown')}")
+    # Log payload structure for debugging
+    logger.debug(f"Token payload decoded. Keys: {list(payload.keys()) if isinstance(payload, dict) else type(payload)}")
+    logger.debug(f"User authenticated successfully: {payload.get('user_id', payload.get('sub', 'Unknown'))}")
     return payload
 
 

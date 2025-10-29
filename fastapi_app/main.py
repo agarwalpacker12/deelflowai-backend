@@ -4430,16 +4430,33 @@ async def create_checkout_session(
         payment_service = PaymentService()
         
         # Get user from authentication
-        # The token payload should contain user_id (from login endpoint)
-        user_id = current_user.get("user_id")
+        # The get_current_user dependency should return the decoded JWT token payload
+        # which contains user_id, email, role, exp, iat, type
+        
+        # Extract user_id - the token payload from get_current_user should have user_id directly
+        user_id = None
+        
+        if isinstance(current_user, dict):
+            # The token payload should have user_id at the top level
+            # Check multiple possible field names for flexibility
+            user_id = (
+                current_user.get("user_id") or
+                current_user.get("sub") or  # Standard JWT subject claim
+                current_user.get("id")
+            )
         
         if not user_id:
-            # Log for debugging
-            logger.error(f"User ID not found in token. Token payload: {current_user}")
+            # If user_id is not found, there might be an issue with token structure
+            # Log full structure for debugging
+            logger.error(f"[CHECKOUT] User ID not found in token payload.")
+            logger.error(f"[CHECKOUT] Token payload keys: {list(current_user.keys()) if isinstance(current_user, dict) else 'Not a dict'}")
+            logger.error(f"[CHECKOUT] Token payload: {current_user}")
             return {
                 "status": "error",
-                "message": f"User not found in token. Please login again. Token keys: {list(current_user.keys()) if isinstance(current_user, dict) else 'Invalid token structure'}"
+                "message": f"User not found in token. Please login again. Token payload structure: {list(current_user.keys()) if isinstance(current_user, dict) else type(current_user).__name__}. The token should contain 'user_id' field."
             }
+        
+        logger.debug(f"[CHECKOUT] Extracted user_id: {user_id}")
         
         # Get user and package info
         try:

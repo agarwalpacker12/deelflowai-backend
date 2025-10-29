@@ -93,6 +93,7 @@ def verify_token(token: str) -> Optional[Dict[str, Any]]:
     """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        logger.debug(f"Token decoded successfully. Payload keys: {list(payload.keys())}")
         return payload
     except PyJWTError as e:
         logger.error(f"Token verification failed: {str(e)}")
