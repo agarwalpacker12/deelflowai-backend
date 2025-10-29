@@ -4377,6 +4377,17 @@ async def create_checkout_session(
     - Include JWT token in Authorization header: `Bearer <token>`
     
     **Request Body:**
+    
+    **Minimum Required:** Only `price_id` is required. All other fields are optional.
+    
+    **Example 1 - Minimum (Only price_id):**
+    ```json
+    {
+        "price_id": "price_1SM4xoE0wE8Cg1knewTgPQf5"
+    }
+    ```
+    
+    **Example 2 - With Optional Fields:**
     ```json
     {
         "price_id": "price_1SM4xoE0wE8Cg1knewTgPQf5",
@@ -4388,10 +4399,10 @@ async def create_checkout_session(
     ```
     
     **Request Body Fields:**
-    - **price_id** (required): Stripe price ID for the subscription plan
+    - **price_id** (✅ REQUIRED): Stripe price ID for the subscription plan
     - **customer_id** (optional): Existing Stripe customer ID
-    - **success_url** (optional): Redirect URL after successful payment
-    - **cancel_url** (optional): Redirect URL if user cancels
+    - **success_url** (optional): Redirect URL after successful payment (default: auto-generated)
+    - **cancel_url** (optional): Redirect URL if user cancels (default: auto-generated)
     - **payment_gateway** (optional): Payment gateway to use (default: "stripe")
     
     **Returns:**
