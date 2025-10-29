@@ -15,10 +15,16 @@ from pathlib import Path
 # Load environment variables
 env_path = Path(__file__).parent.parent.parent.parent / ".env"
 if env_path.exists():
-    load_dotenv(env_path)
+    load_dotenv(env_path, override=True)  # Force override to ensure latest values
+    print(f"🔑 PaymentService: Loading .env from {env_path}")
 
-# Configure Stripe
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY', '')
+# Configure Stripe - load directly from .env
+stripe_secret_key = os.getenv('STRIPE_SECRET_KEY', '')
+if stripe_secret_key and stripe_secret_key != 'sk_test_your_key_here':
+    stripe.api_key = stripe_secret_key
+    print(f"🔑 PaymentService: Stripe API key set at module level: {stripe_secret_key[:20]}...")
+else:
+    print(f"⚠️  PaymentService: Stripe API key not found or invalid: {stripe_secret_key[:30] if stripe_secret_key else 'None'}...")
 
 
 logger = logging.getLogger(__name__)
@@ -30,11 +36,21 @@ class PaymentService:
         self.stripe = stripe
         self.webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET', 'whsec_your_webhook_secret_here')
         
-        # Set Stripe API key dynamically from environment
+        # Set Stripe API key dynamically from environment (double-check)
         api_key = os.getenv('STRIPE_SECRET_KEY', '')
-        if api_key:
+        if api_key and api_key != 'sk_test_your_key_here':
             stripe.api_key = api_key
-            print(f"🔑 PaymentService: Stripe API key configured: {api_key[:20]}...")
+            print(f"🔑 PaymentService: Stripe API key configured in __init__: {api_key[:20]}...")
+        else:
+            print(f"⚠️  PaymentService: Invalid or missing Stripe API key in __init__: {api_key[:30] if api_key else 'None'}...")
+            # Try loading from .env again
+            env_path = Path(__file__).parent.parent.parent.parent / ".env"
+            if env_path.exists():
+                load_dotenv(env_path, override=True)
+                api_key = os.getenv('STRIPE_SECRET_KEY', '')
+                if api_key and api_key != 'sk_test_your_key_here':
+                    stripe.api_key = api_key
+                    print(f"🔑 PaymentService: Stripe API key reloaded: {api_key[:20]}...")
     
     async def create_payment_intent(self, amount: Decimal, currency: str = "usd", 
                                   metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:

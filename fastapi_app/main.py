@@ -4297,6 +4297,7 @@ async def create_permission(permission_data: dict):
 # ==================== PAYMENT GATEWAY ENDPOINTS ====================
 
 @app.get("/subscription-packs/", tags=["Payments"])
+@app.post("/subscription-packs/", tags=["Payments"])
 async def get_subscription_packages(
     current_user: dict = Depends(get_current_user)
 ):
@@ -4307,11 +4308,21 @@ async def get_subscription_packages(
     
     **Authentication Required**
     - User must be signed in to see available plans
-    - Include JWT token in Authorization header: `Bearer <token>`
+    - Include JWT token in Authorization HEADER: `Authorization: Bearer <token>`
+    - ⚠️ DO NOT send token in request body - use Authorization header only
+    
+    **Note:** This endpoint accepts both GET and POST methods
     
     **Returns:**
     - List of subscription packages with pricing and features
     - Package details including Stripe price IDs
+    
+    **Example Request:**
+    ```
+    GET /subscription-packs/
+    Headers:
+      Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    ```
     """
     try:
         from app.services.payment_service import PaymentService
