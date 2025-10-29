@@ -147,7 +147,34 @@ class PaymentService:
     async def get_subscription_packages(self) -> Dict[str, Any]:
         """Get available subscription packages"""
         try:
-            print("🔑 Stripe API key in use:", os.getenv("STRIPE_SECRET_KEY"))
+            # Reload .env to ensure we have the latest Stripe key
+            env_path = Path(__file__).parent.parent.parent.parent / ".env"
+            if env_path.exists():
+                load_dotenv(env_path, override=True)
+            
+            # Get key directly from .env, not from os.environ (which might have defaults)
+            stripe_key = os.getenv("STRIPE_SECRET_KEY", "")
+            
+            # If key is still placeholder or empty, try reading .env directly
+            if not stripe_key or stripe_key == 'sk_test_your_key_here' or 'test' in stripe_key.lower():
+                # Read .env file directly
+                try:
+                    with open(env_path, 'r') as f:
+                        for line in f:
+                            if line.startswith('STRIPE_SECRET_KEY='):
+                                stripe_key = line.split('=', 1)[1].strip()
+                                break
+                except:
+                    pass
+            
+            # Set the key if we found a valid one
+            if stripe_key and stripe_key.startswith('sk_live_'):
+                stripe.api_key = stripe_key
+                print(f"🔑 Stripe API key loaded: {stripe_key[:30]}...")
+            else:
+                print(f"⚠️  Stripe API key issue - Current value: {stripe_key[:30] if stripe_key else 'None'}...")
+            
+            print(f"🔑 Stripe API key in use: {stripe.api_key[:30] if stripe.api_key else 'NOT SET'}...")
 
             # Get products and prices from Stripe
             products = self.stripe.Product.list(active=True, limit=10)
