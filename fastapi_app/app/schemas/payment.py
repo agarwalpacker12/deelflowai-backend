@@ -70,3 +70,22 @@ class PaymentStats(BaseModel):
     failed_payments: int
     payments_by_status: Dict[str, int]
     monthly_revenue: List[Dict[str, Any]]
+
+class CheckoutSessionCreate(BaseModel):
+    """Create Stripe checkout session request model"""
+    price_id: str
+    customer_id: Optional[str] = None
+    success_url: Optional[str] = None
+    cancel_url: Optional[str] = None
+    payment_gateway: str = "stripe"
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "price_id": "price_1SM4xoE0wE8Cg1knewTgPQf5",
+                "customer_id": "cus_xxxxx",
+                "success_url": "http://localhost:3000/payment/success",
+                "cancel_url": "http://localhost:3000/payment/cancel",
+                "payment_gateway": "stripe"
+            }
+        }

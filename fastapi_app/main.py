@@ -14,10 +14,13 @@ import os
 import sys
 import django
 import datetime
+import logging
 from pathlib import Path
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 import ast
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables BEFORE Django setup
 from dotenv import load_dotenv
@@ -36,7 +39,7 @@ from app.schemas.lead import LeadResponse, LeadCreateRequest, LeadUpdateRequest,
 from app.schemas.deal import DealResponse, DealCreateRequest, DealUpdateRequest, DealCreate, DealUpdate
 from app.schemas.milestone import MilestoneCreate, MilestoneUpdate, MilestoneResponse, MilestoneCreateRequest, MilestoneUpdateRequest
 from app.schemas.property_save import PropertySaveCreate, PropertySaveUpdate, PropertySaveResponse, PropertySaveListResponse
-from app.schemas.payment import PaymentIntentCreate, PaymentConfirm, PaymentIntentResponse, PaymentResponse, SubscriptionResponse
+from app.schemas.payment import PaymentIntentCreate, PaymentConfirm, PaymentIntentResponse, PaymentResponse, SubscriptionResponse, CheckoutSessionCreate
 from app.schemas.auth import RegisterRequest, RegisterRequestV2
 from app.schemas.role import RoleCreate, RoleUpdate, RoleResponse
 
@@ -4323,7 +4326,7 @@ async def get_subscription_packages(
 
 @app.post("/create-checkout-session/", tags=["Payments"])
 async def create_checkout_session(
-    request_data: dict,
+    request_data: CheckoutSessionCreate,
     current_user: dict = Depends(get_current_user)
 ):
     """
@@ -4336,15 +4339,38 @@ async def create_checkout_session(
     - Include JWT token in Authorization header: `Bearer <token>`
     
     **Request Body:**
-    - price_id: Stripe price ID for the subscription
-    - customer_id: Optional customer ID
-    - success_url: Optional success redirect URL
-    - cancel_url: Optional cancel redirect URL
-    - payment_gateway: Payment gateway to use (stripe, paytm, etc.)
+    ```json
+    {
+        "price_id": "price_1SM4xoE0wE8Cg1knewTgPQf5",
+        "customer_id": "cus_xxxxx",
+        "success_url": "http://localhost:3000/payment/success",
+        "cancel_url": "http://localhost:3000/payment/cancel",
+        "payment_gateway": "stripe"
+    }
+    ```
+    
+    **Request Body Fields:**
+    - **price_id** (required): Stripe price ID for the subscription plan
+    - **customer_id** (optional): Existing Stripe customer ID
+    - **success_url** (optional): Redirect URL after successful payment
+    - **cancel_url** (optional): Redirect URL if user cancels
+    - **payment_gateway** (optional): Payment gateway to use (default: "stripe")
     
     **Returns:**
     - Checkout session URL and details
     - Transaction saved to database
+    
+    **Example Response:**
+    ```json
+    {
+        "status": "success",
+        "data": {
+            "session_id": "cs_test_xxxxx",
+            "url": "https://checkout.stripe.com/c/pay/cs_test_xxxxx",
+            "customer_id": "cus_xxxxx"
+        }
+    }
+    ```
     """
     try:
         from app.services.payment_service import PaymentService
@@ -4354,31 +4380,40 @@ async def create_checkout_session(
         
         payment_service = PaymentService()
         
-        price_id = request_data.get("price_id")
-        if not price_id:
-            return {
-                "status": "error",
-                "message": "Price ID is required"
-            }
-        
         # Get user from authentication
+        # The token payload should contain user_id (from login endpoint)
         user_id = current_user.get("user_id")
+        
         if not user_id:
+            # Log for debugging
+            logger.error(f"User ID not found in token. Token payload: {current_user}")
             return {
                 "status": "error",
-                "message": "User not found in token"
+                "message": f"User not found in token. Please login again. Token keys: {list(current_user.keys()) if isinstance(current_user, dict) else 'Invalid token structure'}"
             }
         
         # Get user and package info
-        user = await sync_to_async(User.objects.get)(id=user_id)
-        payment_gateway = request_data.get("payment_gateway", "stripe")
+        try:
+            user = await sync_to_async(User.objects.get)(id=user_id)
+        except User.DoesNotExist:
+            return {
+                "status": "error",
+                "message": f"User with ID {user_id} not found in database"
+            }
+        
+        payment_gateway = request_data.payment_gateway or "stripe"
+        
+        # Get customer_id - use provided or user's Stripe customer ID
+        customer_id = request_data.customer_id
+        if not customer_id and hasattr(user, 'stripe_customer_id'):
+            customer_id = user.stripe_customer_id
         
         # Create checkout session
         session_result = await payment_service.create_checkout_session(
-            price_id=price_id,
-            customer_id=request_data.get("customer_id", user.stripe_customer_id),
-            success_url=request_data.get("success_url"),
-            cancel_url=request_data.get("cancel_url")
+            price_id=request_data.price_id,
+            customer_id=customer_id,
+            success_url=request_data.success_url,
+            cancel_url=request_data.cancel_url
         )
         
         # Save transaction to database
@@ -4395,14 +4430,14 @@ async def create_checkout_session(
             try:
                 # Get amount from Stripe price (would need to fetch)
                 # For now, we'll save with session_id
-                plan_name = f"Plan {price_id[-10:]}"
+                plan_name = f"Plan {request_data.price_id[-10:]}"
             except:
                 pass
             
             # Create payment transaction record
             transaction = await sync_to_async(PaymentTransaction.objects.create)(
                 user=user,
-                plan_id=price_id,
+                plan_id=request_data.price_id,
                 plan_name=plan_name,
                 amount=amount,  # Would need to fetch from Stripe
                 currency=currency,
@@ -4413,7 +4448,7 @@ async def create_checkout_session(
                 description=f"Payment for {plan_name}",
                 metadata={
                     "session_id": session_id,
-                    "price_id": price_id
+                    "price_id": request_data.price_id
                 }
             )
             
