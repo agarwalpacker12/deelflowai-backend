@@ -2195,6 +2195,83 @@ async def get_combined_properties(
             "message": f"Failed to get combined properties: {str(e)}"
         }
 
+# ==================== USER LIST (for Role Management) ====================
+
+@app.get(
+    "/api/users/",
+    tags=["Role Management"],
+    summary="List registered users for role assignment"
+)
+async def list_users(
+    page: int = 1,
+    limit: int = 20,
+    search: Optional[str] = None,
+    is_active: Optional[bool] = None
+):
+    """
+    Returns a paginated list of registered users to support role assignment workflows.
+
+    Query Parameters:
+    - page (int): page number (default 1)
+    - limit (int): items per page (default 20, max 100)
+    - search (str): filter by email, first name, or last name (icontains)
+    - is_active (bool): optional filter by active status
+
+    Response items include minimal fields needed for role assignment.
+    """
+    try:
+        from deelflow.models import User
+        from django.db.models import Q
+        from asgiref.sync import sync_to_async
+
+        qs = User.objects.all().order_by("-id")
+        if search:
+            qs = qs.filter(
+                Q(email__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search)
+            )
+        if is_active is not None:
+            qs = qs.filter(is_active=is_active)
+
+        # Pagination
+        page = max(1, page)
+        limit = max(1, min(100, limit))
+        total = await sync_to_async(qs.count)()
+        start = (page - 1) * limit
+        end = start + limit
+        users = await sync_to_async(list)(qs[start:end])
+
+        def serialize(u):
+            return {
+                "id": u.id,
+                "email": u.email,
+                "first_name": getattr(u, "first_name", "") or "",
+                "last_name": getattr(u, "last_name", "") or "",
+                "role": getattr(u, "role", "user") or "user",
+                "is_active": getattr(u, "is_active", True),
+                "is_verified": getattr(u, "is_verified", False),
+                "organization_id": getattr(u, "organization_id", None),
+            }
+
+        items = [serialize(u) for u in users]
+        return {
+            "status": "success",
+            "data": {
+                "users": items,
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "has_next": end < total,
+                "has_prev": start > 0
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to list users: {str(e)}"
+        }
+
 @app.get("/api/properties/attom/market-trends/", tags=["Properties"])
 async def get_attom_market_trends(city: str, state: str):
     """
