@@ -257,9 +257,9 @@ class AttomService:
         
         for prop in property_list:
             try:
-                # Extract identifier data (official ATTOM structure)
+                # Extract identifier and address data (ATTOM structure places address at top-level)
                 identifier = prop.get("identifier", {})
-                address = identifier.get("address", {})
+                address = prop.get("address", {})
                 
                 # Extract property characteristics
                 property_char = prop.get("property", {})
@@ -288,10 +288,10 @@ class AttomService:
                     "id": identifier.get("attomId", identifier.get("id", "")),
                     "street_address": address.get("oneLine", ""),
                     "unit_apt": address.get("unitType", "") or "",
-                    "city": address.get("city", ""),
-                    "state": address.get("state", ""),
-                    "zip_code": address.get("postal1", ""),
-                    "county": address.get("countrySubd", "") or "",
+                    "city": address.get("locality", address.get("city", "")),
+                    "state": address.get("countrySubd", address.get("state", "")),
+                    "zip_code": address.get("postal1", address.get("postalCode", "")),
+                    "county": address.get("county", "") or "",
                     "property_type": property_char.get("type", "residential") or "residential",
                     "bedrooms": property_char.get("bedrooms", 0) or 0,
                     "bathrooms": property_char.get("bathsTotal", 0.0) or 0.0,

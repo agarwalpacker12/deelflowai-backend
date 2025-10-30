@@ -1844,6 +1844,54 @@ async def search_attom_properties(
             "data": []
         }
 
+# Aliased consolidated endpoints under property list namespace
+@app.get("/api/properties/search", tags=["Properties"], summary="Search Properties (ATTOM)")
+async def properties_search(
+    address: Optional[str] = None,
+    city: Optional[str] = None,
+    state: Optional[str] = None,
+    zipcode: Optional[str] = None,
+    property_type: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    min_sqft: Optional[int] = None,
+    max_sqft: Optional[int] = None,
+    bedrooms: Optional[int] = None,
+    bathrooms: Optional[float] = None,
+    limit: int = 50,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    radius: Optional[int] = None
+):
+    """
+    Search properties via ATTOM, exposed under the consolidated properties namespace.
+    """
+    try:
+        from app.services.attom_service import attom_service
+        return attom_service.search_properties(
+            address=address,
+            city=city,
+            state=state,
+            zipcode=zipcode,
+            property_type=property_type,
+            min_price=min_price,
+            max_price=max_price,
+            min_sqft=min_sqft,
+            max_sqft=max_sqft,
+            bedrooms=bedrooms,
+            bathrooms=bathrooms,
+            limit=limit,
+            latitude=latitude,
+            longitude=longitude,
+            radius=radius
+        )
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to search properties: {str(e)}",
+            "data": []
+        }
+
 @app.get("/api/properties/attom/details/{property_id}/", tags=["Properties"])
 async def get_attom_property_details(property_id: str):
     """
@@ -1867,6 +1915,284 @@ async def get_attom_property_details(property_id: str):
         return {
             "status": "error",
             "message": f"Failed to fetch property details: {str(e)}"
+        }
+
+@app.get("/api/properties/details/{property_id}", tags=["Properties"], summary="Get Property Details (ATTOM)")
+async def properties_details(property_id: str):
+    """
+    Get property details via ATTOM, exposed under the consolidated properties namespace.
+    """
+    try:
+        from app.services.attom_service import attom_service
+        return attom_service.get_property_details(property_id)
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to fetch property details: {str(e)}"
+        }
+
+# ==================== COMBINED PROPERTY LIST (Internal + ATTOM) ====================
+
+@app.get(
+    "/api/properties/combined",
+    tags=["Properties"],
+    summary="Combined Property List (Internal + ATTOM)"
+)
+async def get_combined_properties(
+    page: int = 1,
+    limit: int = 20,
+    search: Optional[str] = None,
+    property_type: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    zipcode: Optional[str] = None,
+    city: Optional[str] = None,
+    state: Optional[str] = None,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    radius: Optional[int] = None,
+    include_raw: bool = True
+):
+    """
+    Unified property list that merges internal properties with ATTOM search results.
+
+    Query Parameters:
+    - page (int): page number (default 1)
+    - limit (int): items per page (default 20, max 100)
+    - search (str): free-text search over address/city/state (internal only)
+    - property_type (str): filter by property type
+    - min_price/max_price (number): internal price filters
+    - zipcode (str): ATTOM location filter (recommended)
+    - city/state (str): ATTOM filters; ATTOM typically requires zipcode or lat/long
+    - latitude/longitude (number), radius (int): ATTOM radius search
+    - include_raw (bool): include raw source payloads under `raw.attom`/`raw.internal`
+
+    Returns:
+    - status: "success" or "error"
+    - data: { properties, total, page, limit, has_next, has_prev }
+      - properties: list of unified items with normalized top-level fields and optional `raw`
+
+    Notes:
+    - Deduplicates by canonical address (street+city+state+zip), preferring internal rows and merging ATTOM raw data.
+    - If ATTOM returns a location input error, internal results are still returned.
+    """
+    try:
+        from typing import Dict, Any
+        from datetime import datetime, timezone
+        from app.services.attom_service import attom_service
+        from django.db.models import Q
+        from asgiref.sync import sync_to_async
+        from deelflow.models import Property
+
+        def normalize_internal(p: Any) -> Dict[str, Any]:
+            return {
+                "id": f"src:internal:{p.id}",
+                "source": "internal",
+                "source_id": str(p.id),
+                "attribution": "Internal",
+                "street_address": getattr(p, "address", "") or "",
+                "unit_apt": getattr(p, "unit_apt", "") or "",
+                "city": getattr(p, "city", "") or "",
+                "state": getattr(p, "state", "") or "",
+                "zip_code": getattr(p, "zipcode", "") or "",
+                "county": getattr(p, "county", "") or "",
+                "property_type": getattr(p, "property_type", "") or "",
+                "bedrooms": p.bedrooms if getattr(p, "bedrooms", None) is not None else None,
+                "bathrooms": p.bathrooms if getattr(p, "bathrooms", None) is not None else None,
+                "square_feet": p.square_feet if getattr(p, "square_feet", None) is not None else None,
+                "lot_size": p.lot_size if getattr(p, "lot_size", None) is not None else None,
+                "year_built": p.year_built if getattr(p, "year_built", None) is not None else None,
+                "purchase_price": p.price if getattr(p, "price", None) is not None else None,
+                "arv": p.arv if getattr(p, "arv", None) is not None else None,
+                "repair_estimate": p.repair_estimate if getattr(p, "repair_estimate", None) is not None else None,
+                "holding_costs": p.holding_costs if getattr(p, "holding_costs", None) is not None else None,
+                "transaction_type": getattr(p, "transaction_type", None),
+                "assignment_fee": p.assignment_fee if getattr(p, "assignment_fee", None) is not None else None,
+                "description": getattr(p, "description", "") or "",
+                "seller_notes": getattr(p, "seller_notes", "") or "",
+                "images": [],
+                "status": getattr(p, "status", "available") or "available",
+                "created_at": getattr(p, "created_at", datetime.now(timezone.utc)).isoformat(),
+                "updated_at": getattr(p, "updated_at", datetime.now(timezone.utc)).isoformat(),
+                "raw": {"internal": {
+                    "id": p.id,
+                    "address": getattr(p, "address", None),
+                    "unit_apt": getattr(p, "unit_apt", None),
+                    "city": getattr(p, "city", None),
+                    "state": getattr(p, "state", None),
+                    "zipcode": getattr(p, "zipcode", None),
+                    "county": getattr(p, "county", None),
+                    "property_type": getattr(p, "property_type", None),
+                    "bedrooms": getattr(p, "bedrooms", None),
+                    "bathrooms": getattr(p, "bathrooms", None),
+                    "square_feet": getattr(p, "square_feet", None),
+                    "lot_size": getattr(p, "lot_size", None),
+                    "year_built": getattr(p, "year_built", None),
+                    "price": getattr(p, "price", None),
+                    "arv": getattr(p, "arv", None),
+                    "repair_estimate": getattr(p, "repair_estimate", None),
+                    "holding_costs": getattr(p, "holding_costs", None),
+                    "transaction_type": getattr(p, "transaction_type", None),
+                    "assignment_fee": getattr(p, "assignment_fee", None),
+                    "description": getattr(p, "description", None),
+                    "seller_notes": getattr(p, "seller_notes", None),
+                    "status": getattr(p, "status", None),
+                }}
+            }
+
+        def normalize_attom(item: Dict[str, Any]) -> Dict[str, Any]:
+            # Expect our attom_service to already return normalized basic fields; still guard with .get
+            now_iso = datetime.now(timezone.utc).isoformat()
+            return {
+                "id": f"src:attom:{item.get('id')}",
+                "source": "attom",
+                "source_id": str(item.get("id")),
+                "attribution": "ATTOM Data Solutions",
+                "street_address": item.get("street_address") or "",
+                "unit_apt": item.get("unit_apt") or "",
+                "city": item.get("city") or "",
+                "state": item.get("state") or "",
+                "zip_code": item.get("zip_code") or "",
+                "county": item.get("county") or "",
+                "property_type": item.get("property_type") or "",
+                "bedrooms": item.get("bedrooms", None),
+                "bathrooms": item.get("bathrooms", None),
+                "square_feet": item.get("square_feet", None),
+                "lot_size": item.get("lot_size", None),
+                "year_built": item.get("year_built", None) or None,
+                # Internal-only finance fields default to None for ATTOM rows
+                "purchase_price": None,
+                "arv": None,
+                "repair_estimate": None,
+                "holding_costs": None,
+                "transaction_type": None,
+                "assignment_fee": None,
+                "description": item.get("property_description", "") or "",
+                "seller_notes": item.get("seller_notes", "") or "",
+                "images": item.get("images", []) or [],
+                "status": item.get("status", "available") or "available",
+                "created_at": item.get("created_at") or now_iso,
+                "updated_at": item.get("updated_at") or now_iso,
+                "raw": {"attom": item}
+            }
+
+        # 1) Internal DB fetch with filters (basic search on address/city/state)
+        async def fetch_internal() -> Any:
+            qs = Property.objects.all()
+            if search:
+                qs = qs.filter(
+                    Q(address__icontains=search) |
+                    Q(city__icontains=search) |
+                    Q(state__icontains=search)
+                )
+            if property_type:
+                qs = qs.filter(property_type__iexact=property_type)
+            if min_price is not None:
+                qs = qs.filter(price__gte=min_price)
+            if max_price is not None:
+                qs = qs.filter(price__lte=max_price)
+            return await sync_to_async(list)(qs[:1000])  # cap to reasonable size pre-merge
+
+        # 2) ATTOM fetch (location-based; require zipcode OR coordinates to avoid 400)
+        def fetch_attom() -> Dict[str, Any]:
+            return attom_service.search_properties(
+                address=None, city=city, state=state, zipcode=zipcode,
+                property_type=property_type, min_price=min_price, max_price=max_price,
+                min_sqft=None, max_sqft=None, bedrooms=None, bathrooms=None,
+                limit=50, latitude=latitude, longitude=longitude, radius=radius
+            )
+
+        internal_list, attom_result = await sync_to_async(lambda: None)(), None
+        # fetch internal (await) and attom (sync) sequentially to keep simple and safe
+        internal_list = await fetch_internal()
+        attom_result = fetch_attom()
+
+        # Normalize internal
+        unified: list = [normalize_internal(p) for p in internal_list]
+
+        # Normalize ATTOM if success
+        if isinstance(attom_result, dict) and attom_result.get("status") == "success":
+            # attom_service returns either list under data or direct list; handle both
+            attom_data = attom_result.get("data")
+            attom_list = []
+            if isinstance(attom_data, list):
+                attom_list = attom_data
+            elif isinstance(attom_data, dict):
+                # common: { properties: [...] }
+                for key in ("properties", "results", "items"):
+                    if isinstance(attom_data.get(key), list):
+                        attom_list = attom_data.get(key)
+                        break
+            for item in attom_list:
+                if isinstance(item, dict):
+                    unified.append(normalize_attom(item))
+        else:
+            # If ATTOM fails due to missing location input, continue with internal only
+            pass
+
+        # Optional dedup by canonical address key; prefer internal
+        def address_key(row: Dict[str, Any]) -> str:
+            return "|".join([
+                (row.get("street_address") or "").strip().upper(),
+                (row.get("city") or "").strip().upper(),
+                (row.get("state") or "").strip().upper(),
+                (row.get("zip_code") or "").strip().upper(),
+            ])
+
+        seen = {}
+        deduped = []
+        for row in unified:
+            key = address_key(row)
+            if not key:
+                deduped.append(row)
+                continue
+            if key not in seen:
+                seen[key] = row
+                deduped.append(row)
+            else:
+                # merge raw data if duplicate (keep internal-preferred already ordered)
+                existing = seen[key]
+                if row.get("source") == "attom":
+                    raw = existing.setdefault("raw", {})
+                    raw["attom"] = row.get("raw", {}).get("attom")
+                else:
+                    raw = existing.setdefault("raw", {})
+                    raw["internal_duplicate"] = row.get("raw", {}).get("internal")
+
+        # Sort stable: internal first, then ATTOM; then by city/street
+        deduped.sort(key=lambda r: (
+            0 if r.get("source") == "internal" else 1,
+            (r.get("city") or ""),
+            (r.get("street_address") or "")
+        ))
+
+        # Pagination after merge
+        total = len(deduped)
+        page = max(1, page)
+        limit = max(1, min(100, limit))
+        start = (page - 1) * limit
+        end = start + limit
+        page_items = deduped[start:end]
+
+        if not include_raw:
+            for row in page_items:
+                row.pop("raw", None)
+
+        return {
+            "status": "success",
+            "data": {
+                "properties": page_items,
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "has_next": end < total,
+                "has_prev": start > 0
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to get combined properties: {str(e)}"
         }
 
 @app.get("/api/properties/attom/market-trends/", tags=["Properties"])
