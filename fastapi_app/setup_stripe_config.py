@@ -9,7 +9,7 @@ import os
 from typing import Dict, List, Any
 
 # Configure Stripe
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY', 'sk_test_your_stripe_secret_key_here')
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY', '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')
 
 class StripeSetup:
     """Setup Stripe products and prices for the SaaS platform"""
