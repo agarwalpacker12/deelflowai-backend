@@ -1939,19 +1939,19 @@ async def properties_details(property_id: str):
     summary="Combined Property List (Internal + ATTOM)"
 )
 async def get_combined_properties(
-    page: int = 1,
-    limit: int = 20,
-    search: Optional[str] = None,
-    property_type: Optional[str] = None,
-    min_price: Optional[float] = None,
-    max_price: Optional[float] = None,
-    zipcode: Optional[str] = None,
-    city: Optional[str] = None,
-    state: Optional[str] = None,
-    latitude: Optional[float] = None,
-    longitude: Optional[float] = None,
-    radius: Optional[int] = None,
-    include_raw: bool = True
+    page: int = Query(1, ge=1, description="Page number (default 1)"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page (default 20, max 100)"),
+    search: Optional[str] = Query(None, description="Free-text search over address/city/state (internal only)"),
+    property_type: Optional[str] = Query(None, description="Filter by property type"),
+    min_price: Optional[float] = Query(None, description="Minimum price filter (internal)"),
+    max_price: Optional[float] = Query(None, description="Maximum price filter (internal)"),
+    zipcode: Optional[str] = Query(None, description="ATTOM location filter (recommended)"),
+    city: Optional[str] = Query(None, description="ATTOM city filter"),
+    state: Optional[str] = Query(None, description="ATTOM state filter"),
+    latitude: Optional[float] = Query(None, description="Latitude for radius search (ATTOM)"),
+    longitude: Optional[float] = Query(None, description="Longitude for radius search (ATTOM)"),
+    radius: Optional[int] = Query(None, description="Radius in miles for location-based search (ATTOM)"),
+    include_raw: bool = Query(True, description="Include raw source payloads under raw.attom/raw.internal")
 ):
     """
     Unified property list that merges internal properties with ATTOM search results.
@@ -2203,10 +2203,10 @@ async def get_combined_properties(
     summary="List registered users for role assignment"
 )
 async def list_users(
-    page: int = 1,
-    limit: int = 20,
-    search: Optional[str] = None,
-    is_active: Optional[bool] = None
+    page: int = Query(1, ge=1, description="Page number (default 1)"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page (default 20, max 100)"),
+    search: Optional[str] = Query(None, description="Filter by email, first name, or last name (icontains)"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status (true/false)")
 ):
     """
     Returns a paginated list of registered users to support role assignment workflows.
