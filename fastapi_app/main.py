@@ -4433,17 +4433,27 @@ async def create_checkout_session(
         # The get_current_user dependency should return the decoded JWT token payload
         # which contains user_id, email, role, exp, iat, type
         
-        # Extract user_id - the token payload from get_current_user should have user_id directly
+        # Extract user_id - handle both plain payload and accidental response wrappers
         user_id = None
         
         if isinstance(current_user, dict):
-            # The token payload should have user_id at the top level
-            # Check multiple possible field names for flexibility
+            # Preferred: top-level payload fields
             user_id = (
                 current_user.get("user_id") or
                 current_user.get("sub") or  # Standard JWT subject claim
                 current_user.get("id")
             )
+            
+            # Fallback: if someone accidentally passed a wrapped structure like {status, data}
+            if not user_id and ("status" in current_user and "data" in current_user):
+                data_field = current_user.get("data")
+                if isinstance(data_field, dict):
+                    user_id = (
+                        data_field.get("user_id") or
+                        data_field.get("id") or
+                        (data_field.get("user", {}).get("id") if isinstance(data_field.get("user"), dict) else None) or
+                        (data_field.get("tokens", {}).get("user_id") if isinstance(data_field.get("tokens"), dict) else None)
+                    )
         
         if not user_id:
             # If user_id is not found, there might be an issue with token structure
