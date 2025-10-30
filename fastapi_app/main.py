@@ -172,6 +172,10 @@ tags_metadata = [
         "name": "SignNow",
         "description": "Electronic signature integration with SignNow API.",
     },
+    {
+        "name": "Blockchain",
+        "description": "Polygon (MATIC) blockchain endpoints.",
+    }
 ]
 
 # Update the app with tags metadata
@@ -3052,22 +3056,53 @@ async def register(register_data: RegisterRequest):
         
         # Get or create organization
         organization_id = register_data.organization_id
+        org_payload = getattr(register_data, "organization", None) or {}
+
+        # Helper to slugify and ensure uniqueness
+        def slugify(value: str) -> str:
+            import re
+            value = (value or "").strip().lower()
+            value = re.sub(r"[^a-z0-9\-\s]", "", value)
+            value = re.sub(r"\s+", "-", value)
+            value = re.sub(r"-+", "-", value)
+            return value or "org"
+
+        async def generate_unique_slug(base_slug: str) -> str:
+            base = slugify(base_slug)
+            candidate = base
+            suffix = 1
+            while await sync_to_async(Organization.objects.filter(slug=candidate).exists)():
+                suffix += 1
+                candidate = f"{base}-{suffix}"
+            return candidate
+
         if organization_id:
             try:
                 organization = await sync_to_async(Organization.objects.get)(id=organization_id)
             except Organization.DoesNotExist:
-                # Create default organization
+                # Fall back to creating from payload or default
+                desired_name = org_payload.get("name") if isinstance(org_payload, dict) else None
+                desired_slug = org_payload.get("slug") if isinstance(org_payload, dict) else None
+                name = desired_name or f"{register_data.first_name}'s Organization"
+                slug_base = desired_slug or slugify(name) or f"{register_data.first_name.lower()}-org"
+                unique_slug = await generate_unique_slug(slug_base)
                 organization = await sync_to_async(Organization.objects.create)(
-                    name=f"{register_data.first_name}'s Organization",
-                    slug=f"{register_data.first_name.lower()}-org",
-                    subscription_status="trial"
+                    name=name,
+                    slug=unique_slug,
+                    subscription_status=(org_payload.get("subscription_status") if isinstance(org_payload, dict) else "trial") or "trial",
                 )
         else:
-            # Create default organization for user
+            # Create organization from payload if provided, else default
+            desired_name = org_payload.get("name") if isinstance(org_payload, dict) else None
+            desired_slug = org_payload.get("slug") if isinstance(org_payload, dict) else None
+            name = desired_name or f"{register_data.first_name}'s Organization"
+            slug_base = desired_slug or slugify(name) or f"{register_data.first_name.lower()}-org"
+            # If slug exists, generate a unique one instead of failing
+            unique_slug = await generate_unique_slug(slug_base)
             organization = await sync_to_async(Organization.objects.create)(
-                name=f"{register_data.first_name}'s Organization",
-                slug=f"{register_data.first_name.lower()}-org",
-                subscription_status="trial"
+                name=name,
+                slug=unique_slug,
+                subscription_status=(org_payload.get("subscription_status") if isinstance(org_payload, dict) else "trial") or "trial",
             )
         
         # Hash password
@@ -4333,6 +4368,62 @@ async def get_subscription_packages(request: Request):
             "status": "error",
             "message": f"Failed to get subscription packages: {str(e)}"
         }
+
+# ==================== BLOCKCHAIN: POLYGON (MATIC) ====================
+
+@app.get("/polygon/network", tags=["Blockchain"])
+async def polygon_network_info():
+    """
+    **Polygon Network Info**
+
+    Returns basic connection and network information for the configured Polygon RPC.
+    """
+    try:
+        from app.services.polygon_service import PolygonService
+        svc = PolygonService()
+        return {"status": "success", "data": svc.get_network_info()}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/polygon/balance/{address}", tags=["Blockchain"])
+async def polygon_get_balance(address: str):
+    """
+    **Get MATIC Balance**
+
+    Returns the MATIC balance for the provided address.
+    """
+    try:
+        from app.services.polygon_service import PolygonService
+        svc = PolygonService()
+        return {"status": "success", "data": svc.get_balance(address)}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+class PolygonTransferRequest(BaseModel):
+    to_address: str
+    amount_matic: float
+    private_key: Optional[str] = None  # optional; will use server key if not provided
+
+
+@app.post("/polygon/transfer", tags=["Blockchain"])
+async def polygon_transfer(req: PolygonTransferRequest, current_user: dict = Depends(get_current_user)):
+    """
+    **Transfer Native MATIC**
+
+    Sends MATIC from the provided private key or the server wallet (if configured).
+    Authentication required to prevent abuse.
+    """
+    try:
+        from app.services.polygon_service import PolygonService
+        svc = PolygonService()
+        tx = svc.transfer_native(req.to_address, req.amount_matic, req.private_key)
+        return {"status": "success", "data": tx}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.post("/create-checkout-session/", tags=["Payments"])
 async def create_checkout_session(
