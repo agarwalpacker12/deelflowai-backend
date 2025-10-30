@@ -28,7 +28,7 @@ import os
 if 'STRIPE_PUBLISHABLE_KEY' not in os.environ:
     os.environ.setdefault('STRIPE_PUBLISHABLE_KEY', 'pk_test_your_key_here')
 if 'STRIPE_SECRET_KEY' not in os.environ:
-    os.environ.setdefault('STRIPE_SECRET_KEY', 'sk_test_your_key_here')
+    os.environ.setdefault('STRIPE_SECRET_KEY', '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')
 if 'STRIPE_WEBHOOK_SECRET' not in os.environ:
     os.environ.setdefault('STRIPE_WEBHOOK_SECRET', 'whsec_your_webhook_secret')
 os.environ.setdefault('FRONTEND_URL', 'http://localhost:3000')
