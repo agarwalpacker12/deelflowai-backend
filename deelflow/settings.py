@@ -24,13 +24,9 @@ from re import template
 
 # Set environment variables directly for now
 import os
-# Don't override environment variables if they're already set
-if 'STRIPE_PUBLISHABLE_KEY' not in os.environ:
-    os.environ.setdefault('STRIPE_PUBLISHABLE_KEY', 'pk_test_your_key_here')
-if 'STRIPE_SECRET_KEY' not in os.environ:
-    os.environ.setdefault('STRIPE_SECRET_KEY', 'sk_test_your_key_here')
-if 'STRIPE_WEBHOOK_SECRET' not in os.environ:
-    os.environ.setdefault('STRIPE_WEBHOOK_SECRET', 'whsec_your_webhook_secret')
+os.environ.setdefault('STRIPE_PUBLISHABLE_KEY', 'pk_test_your_key_here')
+os.environ.setdefault('STRIPE_SECRET_KEY', 'sk_test_your_key_here')
+os.environ.setdefault('STRIPE_WEBHOOK_SECRET', 'whsec_your_webhook_secret')
 os.environ.setdefault('FRONTEND_URL', 'http://localhost:3000')
 os.environ.setdefault('BACKEND_URL', 'http://localhost:8000')
 
