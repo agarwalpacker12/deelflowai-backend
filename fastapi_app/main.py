@@ -3,7 +3,7 @@ DeelFlowAI FastAPI Application - Final Clean Version
 Completely organized with proper Swagger grouping and frontend compatibility
 """
 
-from fastapi import FastAPI, HTTPException, Request, Query, Depends, Header, status, UploadFile, File, Body, Request as FastAPIRequest
+from fastapi import FastAPI, HTTPException, Request, Query, Depends, Header, status, UploadFile, File, Body, Request as FastAPIRequest, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.requests import Request
 from fastapi.params import Path as PathParam
@@ -4302,26 +4302,15 @@ async def create_permission(permission_data: dict):
 bearer_scheme = HTTPBearer(auto_error=False)
 
 @app.get("/subscription-packs/", tags=["Payments"])
-async def get_subscription_packages(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
-):
+async def get_subscription_packages(request: Request):
     """
     **Get Subscription Packages**
     
     Retrieves all available subscription packages from Stripe.
     
-    **Authentication Required** 🔐
-    - User must be signed in to see available plans
-    - Include JWT token in Authorization HEADER: `Authorization: Bearer <token>`
-    - ⚠️ DO NOT send token in request body - use Authorization header only
-    
-    **Using Swagger UI:**
-    1. Click the **"Authorize"** button (🔒 lock icon, top right)
-    2. Enter your JWT token: `Bearer <your_token>` (or just `<your_token>` - Bearer is added automatically)
-    3. Click **"Authorize"**
-    4. Click **"Close"**
-    5. Try the endpoint - your token will be automatically included in requests
+    **Public Endpoint** 🔓
+    - Visible to all users (no authentication required)
+    - Shows available plans so users can view before signing in
     
     **Returns:**
     - List of subscription packages with pricing and features
@@ -4330,25 +4319,8 @@ async def get_subscription_packages(
     **Example Request:**
     ```
     GET /subscription-packs/
-    Headers:
-      Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     ```
     """
-    # Get authorization header - prefer from HTTPBearer, fallback to request headers
-    authorization = None
-    if credentials and credentials.credentials:
-        authorization = f"Bearer {credentials.credentials}"
-    else:
-        # Fallback: get from request headers directly
-        authorization = request.headers.get("Authorization") or request.headers.get("authorization")
-    
-    # Manual authentication check (enforce authentication)
-    from app.core.auth_middleware import get_current_user as auth_user
-    try:
-        current_user = await auth_user(authorization)
-    except HTTPException as auth_error:
-        raise auth_error  # Re-raise authentication errors
-    
     try:
         from app.services.payment_service import PaymentService
         payment_service = PaymentService()
@@ -4365,16 +4337,19 @@ async def get_subscription_packages(
 @app.post("/create-checkout-session/", tags=["Payments"])
 async def create_checkout_session(
     request_data: CheckoutSessionCreate,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials = Security(bearer_scheme)
 ):
     """
     **Create Stripe Checkout Session**
     
     Creates a Stripe checkout session for subscription purchase.
     
-    **Authentication Required**
-    - User must be logged in to create payment session
+    **Authentication Required** 🔐
+    - User must be logged in to create a payment session
     - Include JWT token in Authorization header: `Bearer <token>`
+    
+    This endpoint is protected in Swagger via the Bearer auth scheme (lock icon). Click "Authorize" and paste your token.
     
     **Request Body:**
     
@@ -4404,6 +4379,10 @@ async def create_checkout_session(
     - **success_url** (optional): Redirect URL after successful payment (default: auto-generated)
     - **cancel_url** (optional): Redirect URL if user cancels (default: auto-generated)
     - **payment_gateway** (optional): Payment gateway to use (default: "stripe")
+    
+    **Responses:**
+    - 200: Checkout session URL and details
+    - 401: Not authenticated (please sign in to buy a plan)
     
     **Returns:**
     - Checkout session URL and details
